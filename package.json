@@ -1,0 +1,38 @@
+{
+  "name": "llm-conversation-ts",
+  "version": "1.0.0",
+  "description": "TypeScript version of LLM conversation system that enables two different Large Language Models to have conversations with each other",
+  "main": "dist/conversation.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/conversation.ts",
+    "start": "node dist/conversation.js",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/myleshenderson/llm-conversation-ts.git"
+  },
+  "keywords": [
+    "llm",
+    "ai",
+    "conversation",
+    "openai",
+    "anthropic",
+    "typescript"
+  ],
+  "author": "Myles Henderson",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
