@@ -78,7 +78,7 @@ function createComprehensiveJson(
       duration_seconds: duration,
       status: 'completed',
       version: '2.0',
-      features: ['conversation_history', 'context_aware', 'typescript_implementation']
+      features: ['conversation_history', 'context_aware', 'typescript_native']
     },
     conversation: {
       topic,
@@ -238,7 +238,7 @@ async function main() {
     console.log(`  🤖 OpenAI tokens: ${openaiTokens}`);
     console.log(`  🟣 Anthropic tokens: ${anthropicTokens}`);
     console.log('\n🌐 JSON file is ready for web display and analysis!');
-    console.log('✨ Full conversation context maintained - no more \'mid-conversation\' confusion!');
+    console.log('✨ Full conversation context maintained for natural AI interactions!');
     
   } catch (error) {
     logger.log('ERROR', `Conversation failed: ${error}`);

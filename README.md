@@ -1,6 +1,6 @@
 # LLM Conversation TypeScript
 
-A TypeScript implementation of the LLM conversation system that enables two different Large Language Models (OpenAI GPT and Anthropic Claude) to have conversations with each other. This is a complete rewrite of the original Python/Bash system with improved type safety, better error handling, and modern JavaScript/TypeScript tooling.
+A modern TypeScript system that enables two different Large Language Models (OpenAI GPT and Anthropic Claude) to have conversations with each other. Built with type safety, comprehensive logging, and rich data export capabilities.
 
 ## Features
 
@@ -183,7 +183,7 @@ try {
 
 ## JSON Data Structure
 
-The TypeScript version produces the same rich JSON exports as the Python version, but with additional type safety guarantees:
+The system produces rich JSON exports with complete type safety:
 
 ```json
 {
@@ -194,7 +194,7 @@ The TypeScript version produces the same rich JSON exports as the Python version
     "duration_seconds": 17,
     "status": "completed",
     "version": "2.0",
-    "features": ["conversation_history", "context_aware", "typescript_implementation"]
+    "features": ["conversation_history", "context_aware", "typescript_native"]
   },
   "conversation": {
     "topic": "Discuss the ethics of AI in healthcare",
@@ -246,20 +246,10 @@ The TypeScript architecture makes it easy to extend:
 
 To add new AI providers:
 
-1. Create a new handler file (e.g., `src/claude-handler.ts`)
+1. Create a new handler file (e.g., `src/gemini-handler.ts`)
 2. Implement the `AIHandlerResult` interface
 3. Add provider-specific types to `types.ts`
 4. Update the conversation orchestrator
-
-## Differences from Python Version
-
-- **Type Safety**: Full TypeScript type checking
-- **Modern Async**: Uses fetch API and async/await throughout
-- **Better Error Handling**: Type-safe error management
-- **Improved Logging**: Structured logging with better formatting
-- **Cleaner Architecture**: Separation of concerns with dedicated classes
-- **No External HTTP Library**: Uses built-in fetch API
-- **Modern JavaScript**: ES2022 features and syntax
 
 ## API Costs
 
@@ -269,13 +259,14 @@ Be aware that each conversation will make multiple API calls:
 
 A typical 10-turn conversation might cost $0.10-$0.50 depending on response lengths.
 
-## Contributing
+## Architecture
 
-This is a TypeScript rewrite focused on:
-- Type safety and maintainability
-- Modern JavaScript/TypeScript practices
-- Minimal dependencies
-- Clean, readable code
+This project is built with modern TypeScript best practices:
+- **Type safety and maintainability**: Comprehensive type definitions prevent runtime errors
+- **Modern JavaScript/TypeScript patterns**: Uses latest ES2022 features and async/await
+- **Minimal dependencies**: Only essential packages to reduce bloat and security surface
+- **Clean, readable code**: Well-structured modules with clear separation of concerns
+- **Extensible design**: Easy to add new AI providers or conversation formats
 
 ## License
 
