@@ -61,7 +61,7 @@ export class OpenAIHandler {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const responseData: OpenAIResponse = await response.json();
+      const responseData = await response.json() as OpenAIResponse;
       
       // Check for API errors
       if ('error' in responseData) {

@@ -62,7 +62,7 @@ export class AnthropicHandler {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const responseData: AnthropicResponse = await response.json();
+      const responseData = await response.json() as AnthropicResponse;
       
       // Check for API errors
       if ('error' in responseData) {

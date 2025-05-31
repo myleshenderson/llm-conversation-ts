@@ -12,7 +12,7 @@ export interface Config {
 }
 
 export interface ConversationMessage {
-  role: 'user' | 'assistant' | 'system';
+  role?: 'user' | 'assistant' | 'system';
   content: string;
   speaker?: 'openai' | 'anthropic';
 }
