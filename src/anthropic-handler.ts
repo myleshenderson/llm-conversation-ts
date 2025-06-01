@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Config, AnthropicResponse, TurnMetadata, AIHandlerResult } from './types';
 import { Logger } from './logger';
 import { HistoryManager } from './history';
+import { withRetry, DEFAULT_RETRY_OPTIONS } from './retry-utils';
 
 export class AnthropicHandler {
   private config: Config;
@@ -46,23 +47,35 @@ export class AnthropicHandler {
       this.logger.log('DEBUG', `Sending request to Anthropic API with ${messages.length} messages in history`);
       this.logger.log('DEBUG', `Model: ${this.config.ANTHROPIC_MODEL}`);
       
-      // Make API call
+      // Make API call with retry logic
       const startTime = Date.now();
-      const response = await fetch(`${this.config.ANTHROPIC_BASE_URL}/messages`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload)
+      
+      const responseData = await withRetry(async () => {
+        this.logger.log('DEBUG', 'Making API request to Anthropic...');
+        
+        const response = await fetch(`${this.config.ANTHROPIC_BASE_URL}/messages`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          this.logger.log('ERROR', `HTTP ${response.status}: ${errorText}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json() as AnthropicResponse;
+      }, {
+        ...DEFAULT_RETRY_OPTIONS,
+        retries: 5 // Retry up to 5 times for rate limits
       });
+      
       const endTime = Date.now();
       const responseTime = endTime - startTime;
       
-      this.logger.log('DEBUG', `Response time: ${responseTime}ms`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const responseData = await response.json() as AnthropicResponse;
+      this.logger.log('DEBUG', `Response time: ${responseTime}ms (including retries)`);
+      this.logger.log('INFO', 'Successfully received response from Anthropic');
       
       // Check for API errors
       if ('error' in responseData) {

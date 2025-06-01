@@ -30,7 +30,8 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "p-retry": "^6.2.1"
   },
   "engines": {
     "node": ">=18.0.0"
