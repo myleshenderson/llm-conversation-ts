@@ -34,13 +34,14 @@ export class UploadService {
         const options = {
           hostname: url.hostname,
           port: url.port || 443,
-          path: '/prod/health',
-          method: 'GET',
-          timeout: 5000
+          path: url.pathname,
+          method: 'OPTIONS', // Use OPTIONS to test without sending data
+          timeout: 10000
         };
 
         const req = https.request(options, (res) => {
-          resolve(res.statusCode === 200 || res.statusCode === 404);
+          // Any response (even 405 Method Not Allowed) means the endpoint is reachable
+          resolve(res.statusCode < 500);
         });
 
         req.on('error', () => resolve(false));
