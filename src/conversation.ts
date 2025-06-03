@@ -6,6 +6,7 @@ import { loadConfig } from './config';
 import { Logger } from './logger';
 import { OpenAIHandler } from './openai-handler';
 import { AnthropicHandler } from './anthropic-handler';
+import { createUploadService } from './upload-service';
 import { ComprehensiveConversation, TurnMetadata } from './types';
 
 function generateSessionId(topic: string): string {
@@ -114,13 +115,21 @@ function createComprehensiveJson(
 async function main() {
   const args = process.argv.slice(2);
   
-  if (args.length !== 2) {
-    console.error('Usage: conversation.ts <topic> <max_turns>');
+  if (args.length < 2) {
+    console.error('Usage: conversation.ts <topic> <max_turns> [--upload|--no-upload]');
     process.exit(1);
   }
   
   const topic = args[0];
   const maxTurns = parseInt(args[1]);
+  
+  // Parse upload override from command line
+  let uploadOverride: boolean | undefined = undefined;
+  if (args.includes('--upload')) {
+    uploadOverride = true;
+  } else if (args.includes('--no-upload')) {
+    uploadOverride = false;
+  }
   
   if (maxTurns < 2 || maxTurns > 50) {
     console.error('Error: max_turns must be between 2 and 50');
@@ -225,12 +234,46 @@ async function main() {
     
     logger.log('INFO', `Comprehensive JSON export completed: ${jsonOutput}`);
     
+    // Handle upload if enabled
+    let uploadResult = null;
+    const shouldUpload = uploadOverride !== undefined ? uploadOverride : config.AUTO_UPLOAD === 'true';
+    
+    if (shouldUpload && config.UPLOAD_ENABLED === 'true') {
+      try {
+        logger.log('INFO', 'Attempting to upload conversation...');
+        const uploadService = createUploadService(config);
+        
+        // Read the comprehensive conversation data
+        const conversationData: ComprehensiveConversation = JSON.parse(fs.readFileSync(jsonOutput, 'utf-8'));
+        uploadResult = await uploadService.uploadConversation(conversationData, sessionId);
+        
+        if (uploadResult.success) {
+          logger.log('INFO', `Upload successful: ${uploadResult.viewerUrl}`);
+        } else {
+          logger.log('ERROR', `Upload failed: ${uploadResult.error}`);
+        }
+      } catch (uploadError) {
+        logger.log('ERROR', `Upload error: ${uploadError}`);
+        uploadResult = { success: false, error: String(uploadError) };
+      }
+    }
+    
     // Print summary
     console.log('\n🎉 Conversation with context completed!');
     console.log(`\n📁 Files created:`);
     console.log(`  📋 Main log: ${sessionLog}`);
     console.log(`  📊 JSON export: ${jsonOutput}`);
     console.log(`  🧠 Conversation history: ${path.join(logDir, `${sessionId}_history.json`)}`);
+    
+    // Upload status
+    if (shouldUpload && config.UPLOAD_ENABLED === 'true') {
+      if (uploadResult?.success) {
+        console.log(`\n🌐 Online viewer: ${uploadResult.viewerUrl}`);
+      } else {
+        console.log(`\n❌ Upload failed: ${uploadResult?.error || 'Unknown error'}`);
+      }
+    }
+    
     console.log(`\n📊 Statistics:`);
     console.log(`  🔄 Turns: ${turnCount}`);
     console.log(`  🕒 Duration: ${duration}s`);

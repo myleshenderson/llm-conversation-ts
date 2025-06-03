@@ -9,6 +9,12 @@ export interface Config {
   MAX_TURNS: string;
   DELAY_BETWEEN_MESSAGES: string;
   LOG_LEVEL?: string;
+  // Upload Settings
+  UPLOAD_ENABLED?: string;
+  UPLOAD_API_URL?: string;
+  AUTO_UPLOAD?: string;
+  UPLOAD_MAX_RETRIES?: string;
+  UPLOAD_RETRY_DELAY?: string;
 }
 
 export interface ConversationMessage {

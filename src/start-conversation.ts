@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { loadConfig } from './config';
+import { createUploadService } from './upload-service';
 import { execSync } from 'child_process';
 import * as readline from 'readline';
 
@@ -47,14 +48,22 @@ function showUsage() {
   console.log('🤖 LLM Conversation Starter (TypeScript)');
   console.log('');
   console.log('Usage:');
-  console.log('  start-conversation [topic] [turns]                - Start conversation with custom topic and turns');
+  console.log('  start-conversation [topic] [turns] [options]      - Start conversation with custom topic and turns');
   console.log('  start-conversation --examples                     - Show example topics');
-  console.log('  start-conversation --random [turns]               - Start with a random topic');
+  console.log('  start-conversation --random [turns] [options]     - Start with a random topic');
+  console.log('  start-conversation --config                       - Show current configuration');
+  console.log('  start-conversation --test-upload                  - Test upload API connection');
+  console.log('  start-conversation --upload-file <path>           - Upload existing conversation file');
+  console.log('');
+  console.log('Options:');
+  console.log('  --upload                                          - Force enable upload for this conversation');
+  console.log('  --no-upload                                       - Force disable upload for this conversation');
   console.log('');
   console.log('Examples:');
   console.log('  start-conversation "Discuss the future of space exploration"');
   console.log('  start-conversation "Debate the pros and cons of remote work" 6');
-  console.log('  start-conversation "Analyze the impact of social media" 15');
+  console.log('  start-conversation "Analyze the impact of social media" 15 --upload');
+  console.log('  start-conversation --upload-file logs/conversation_123.json');
   console.log('');
   console.log('Parameters:');
   console.log('  topic  - The conversation topic (required)');
@@ -102,7 +111,7 @@ async function askUser(question: string): Promise<string> {
   });
 }
 
-async function runConversation(topic: string, turns?: number) {
+async function runConversation(topic: string, turns?: number, uploadOverride?: boolean) {
   try {
     console.log('💭 Topic:', topic);
     if (turns) {
@@ -114,9 +123,16 @@ async function runConversation(topic: string, turns?: number) {
     if (answer.toLowerCase() === 'y' || answer.toLowerCase() === 'yes') {
       console.log('Starting TypeScript conversation...');
       
-      const command = turns 
+      let command = turns 
         ? `npx tsx src/conversation.ts "${topic}" ${turns}`
         : `npx tsx src/conversation.ts "${topic}" 10`;
+      
+      // Add upload override if specified
+      if (uploadOverride === true) {
+        command += ' --upload';
+      } else if (uploadOverride === false) {
+        command += ' --no-upload';
+      }
       
       execSync(command, { stdio: 'inherit', cwd: process.cwd() });
     } else {
@@ -125,6 +141,82 @@ async function runConversation(topic: string, turns?: number) {
   } catch (error) {
     console.error('Error running conversation:', error);
     process.exit(1);
+  }
+}
+
+async function showConfig() {
+  try {
+    const config = loadConfig();
+    console.log('⚙️ Current Configuration:');
+    console.log('');
+    
+    // Basic settings
+    console.log('🤖 Models:');
+    console.log(`  OpenAI: ${config.OPENAI_MODEL}`);
+    console.log(`  Anthropic: ${config.ANTHROPIC_MODEL}`);
+    console.log('');
+    
+    // Upload settings
+    console.log('📤 Upload Settings:');
+    const uploadEnabled = config.UPLOAD_ENABLED === 'true';
+    console.log(`  Enabled: ${uploadEnabled ? '✅' : '❌'} ${config.UPLOAD_ENABLED || 'false'}`);
+    
+    if (uploadEnabled) {
+      console.log(`  API URL: ${config.UPLOAD_API_URL || 'Not set'}`);
+      console.log(`  Auto Upload: ${config.AUTO_UPLOAD === 'true' ? '✅' : '❌'} ${config.AUTO_UPLOAD || 'false'}`);
+      console.log(`  Max Retries: ${config.UPLOAD_MAX_RETRIES || '3'}`);
+      console.log(`  Retry Delay: ${config.UPLOAD_RETRY_DELAY || '1000'}ms`);
+      
+      // Test connection
+      if (config.UPLOAD_API_URL) {
+        console.log('');
+        console.log('🔍 Testing connection...');
+        const uploadService = createUploadService(config);
+        const connectionOk = await uploadService.testConnection();
+        console.log(`  Connection: ${connectionOk ? '✅ OK' : '❌ Failed'}`);
+      }
+    }
+    
+  } catch (error) {
+    console.error('❌ Error loading configuration:', error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function testUpload() {
+  try {
+    const config = loadConfig();
+    const uploadService = createUploadService(config);
+    
+    console.log('🔍 Testing upload connection...');
+    const connectionOk = await uploadService.testConnection();
+    
+    if (connectionOk) {
+      console.log('✅ Upload connection test successful!');
+    } else {
+      console.log('❌ Upload connection test failed');
+      console.log('   Check your UPLOAD_API_URL configuration');
+    }
+  } catch (error) {
+    console.error('❌ Error testing upload:', error instanceof Error ? error.message : String(error));
+  }
+}
+
+async function uploadFile(filePath: string) {
+  try {
+    const config = loadConfig();
+    const uploadService = createUploadService(config);
+    
+    console.log(`📤 Uploading file: ${filePath}`);
+    const result = await uploadService.uploadFile(filePath);
+    
+    if (result.success) {
+      console.log('✅ Upload successful!');
+      console.log(`🌐 Online viewer: ${result.viewerUrl}`);
+    } else {
+      console.log(`❌ Upload failed: ${result.error}`);
+    }
+  } catch (error) {
+    console.error('❌ Error uploading file:', error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -141,13 +233,45 @@ async function main() {
     case '--random':
     case '-r': {
       const topic = getRandomTopic();
-      const turns = args[1] ? parseInt(args[1]) : undefined;
+      let turns = undefined;
+      let uploadOverride = undefined;
+      
+      // Parse arguments for random topic
+      for (let i = 1; i < args.length; i++) {
+        if (args[i] === '--upload') {
+          uploadOverride = true;
+        } else if (args[i] === '--no-upload') {
+          uploadOverride = false;
+        } else if (!isNaN(parseInt(args[i]))) {
+          turns = parseInt(args[i]);
+        }
+      }
+      
       console.log('🎲 Random topic selected:', topic);
       if (turns) {
         console.log('🔄 Turns:', turns);
       }
       console.log('');
-      await runConversation(topic, turns);
+      await runConversation(topic, turns, uploadOverride);
+      break;
+    }
+    
+    case '--config':
+      await showConfig();
+      break;
+      
+    case '--test-upload':
+      await testUpload();
+      break;
+      
+    case '--upload-file': {
+      const filePath = args[1];
+      if (!filePath) {
+        console.error('❌ Error: Please provide a file path');
+        console.log('Usage: start-conversation --upload-file <path>');
+        process.exit(1);
+      }
+      await uploadFile(filePath);
       break;
     }
     
@@ -160,8 +284,21 @@ async function main() {
       
     default: {
       const topic = command;
-      const turns = args[1] ? parseInt(args[1]) : undefined;
-      await runConversation(topic, turns);
+      let turns = undefined;
+      let uploadOverride = undefined;
+      
+      // Parse arguments for custom topic
+      for (let i = 1; i < args.length; i++) {
+        if (args[i] === '--upload') {
+          uploadOverride = true;
+        } else if (args[i] === '--no-upload') {
+          uploadOverride = false;
+        } else if (!isNaN(parseInt(args[i]))) {
+          turns = parseInt(args[i]);
+        }
+      }
+      
+      await runConversation(topic, turns, uploadOverride);
       break;
     }
   }

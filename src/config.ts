@@ -38,6 +38,14 @@ export function loadConfig(): Config {
       process.exit(1);
     }
   }
+
+  // Validate upload configuration if enabled
+  if ((config as any)['UPLOAD_ENABLED'] === 'true') {
+    if (!(config as any)['UPLOAD_API_URL']) {
+      console.error('Error: UPLOAD_API_URL is required when UPLOAD_ENABLED is true');
+      process.exit(1);
+    }
+  }
   
   return config as Config;
 }
