@@ -15,6 +15,11 @@ export interface Config {
   AUTO_UPLOAD?: string;
   UPLOAD_MAX_RETRIES?: string;
   UPLOAD_RETRY_DELAY?: string;
+  // Analysis Settings
+  ANALYSIS_ENABLED?: string;
+  ANALYSIS_MODEL?: string;
+  ANALYSIS_HOOK_THRESHOLD?: string;
+  ANALYSIS_FEATURE_THRESHOLD?: string;
 }
 
 export interface ConversationMessage {
@@ -127,4 +132,21 @@ export type LogLevel = 'DEBUG' | 'INFO' | 'ERROR' | 'INPUT' | 'OUTPUT' | 'METADA
 export interface AIHandlerResult {
   response: string;
   metadata: TurnMetadata;
+}
+
+export interface ConversationAnalysis {
+  ontological_depth: number;        // 0-10
+  journey_surprise: number;         // 0-10  
+  logical_coherence: number;        // 0-10
+  hook_strength: number;            // 0-10
+  shareability_factors: string[];
+  conversation_type: 'rabbit_hole' | 'circle_back' | 'escalating_depth' | 'tangent_cascade';
+  brief_explanation: string;
+  conversation_summary: string;
+  analysis_timestamp: string;
+  analysis_model: string;
+}
+
+export interface AnalyzedConversation extends ComprehensiveConversation {
+  analysis: ConversationAnalysis;
 }

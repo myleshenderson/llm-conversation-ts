@@ -7,7 +7,8 @@ import { Logger } from './logger';
 import { OpenAIHandler } from './openai-handler';
 import { AnthropicHandler } from './anthropic-handler';
 import { createUploadService } from './upload-service';
-import { ComprehensiveConversation, TurnMetadata } from './types';
+import { ComprehensiveConversation, TurnMetadata, ConversationAnalysis, AnalyzedConversation } from './types';
+import { AnalysisService } from './analysis-service';
 
 function generateSessionId(topic: string): string {
   const topicSlug = topic.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30);
@@ -110,6 +111,62 @@ function createComprehensiveJson(
   fs.writeFileSync(outputFile, JSON.stringify(comprehensiveData, null, 2));
   
   return outputFile;
+}
+
+async function analyzeAndUpload(
+  conversationData: ComprehensiveConversation,
+  config: any,
+  logger: Logger,
+  sessionId: string,
+  uploadOverride?: boolean
+): Promise<{ analysis: ConversationAnalysis | null; uploadResult: any }> {
+  
+  let analysis: ConversationAnalysis | null = null;
+  
+  // Run analysis if enabled
+  if (config.ANALYSIS_ENABLED === 'true' && config.OPENAI_API_KEY) {
+    try {
+      logger.log('INFO', 'Running semantic analysis...');
+      const analysisService = new AnalysisService(config.OPENAI_API_KEY, config.ANALYSIS_MODEL || 'gpt-4o-mini', logger);
+      analysis = await analysisService.analyzeConversation(conversationData);
+      
+      // Log analysis results
+      logger.log('INFO', `Analysis: ${analysis.brief_explanation}`);
+      logger.log('INFO', `Hook strength: ${analysis.hook_strength}/10`);
+      
+    } catch (error) {
+      logger.log('ERROR', `Analysis failed: ${error}`);
+      // Continue without analysis
+    }
+  }
+
+  // Create analyzed conversation object
+  const finalConversation: AnalyzedConversation | ComprehensiveConversation = analysis
+    ? { ...conversationData, analysis }
+    : conversationData;
+
+  // Handle upload
+  let uploadResult = null;
+  const shouldUpload = uploadOverride !== undefined ? uploadOverride : config.AUTO_UPLOAD === 'true';
+  
+  if (shouldUpload && config.UPLOAD_ENABLED === 'true') {
+    try {
+      logger.log('INFO', 'Attempting to upload conversation...');
+      const uploadService = createUploadService(config);
+      uploadResult = await uploadService.uploadConversation(finalConversation, sessionId);
+      
+      if (uploadResult.success) {
+        logger.log('INFO', `Upload successful: ${uploadResult.viewerUrl}`);
+      } else {
+        logger.log('ERROR', `Upload failed: ${uploadResult.error}`);
+      }
+    } catch (uploadError) {
+      logger.log('ERROR', `Upload error: ${uploadError}`);
+      uploadResult = { success: false, error: String(uploadError) };
+    }
+  }
+
+  return { analysis, uploadResult };
 }
 
 async function main() {
@@ -234,28 +291,25 @@ async function main() {
     
     logger.log('INFO', `Comprehensive JSON export completed: ${jsonOutput}`);
     
-    // Handle upload if enabled
-    let uploadResult = null;
-    const shouldUpload = uploadOverride !== undefined ? uploadOverride : config.AUTO_UPLOAD === 'true';
+    // Read the conversation data
+    const conversationData: ComprehensiveConversation = JSON.parse(fs.readFileSync(jsonOutput, 'utf-8'));
     
-    if (shouldUpload && config.UPLOAD_ENABLED === 'true') {
-      try {
-        logger.log('INFO', 'Attempting to upload conversation...');
-        const uploadService = createUploadService(config);
-        
-        // Read the comprehensive conversation data
-        const conversationData: ComprehensiveConversation = JSON.parse(fs.readFileSync(jsonOutput, 'utf-8'));
-        uploadResult = await uploadService.uploadConversation(conversationData, sessionId);
-        
-        if (uploadResult.success) {
-          logger.log('INFO', `Upload successful: ${uploadResult.viewerUrl}`);
-        } else {
-          logger.log('ERROR', `Upload failed: ${uploadResult.error}`);
-        }
-      } catch (uploadError) {
-        logger.log('ERROR', `Upload error: ${uploadError}`);
-        uploadResult = { success: false, error: String(uploadError) };
-      }
+    // Analyze and upload
+    const { analysis, uploadResult } = await analyzeAndUpload(
+      conversationData, 
+      config, 
+      logger, 
+      sessionId, 
+      uploadOverride
+    );
+    
+    // Update JSON with analysis if available
+    if (analysis) {
+      const analyzedData: AnalyzedConversation = {
+        ...conversationData,
+        analysis
+      };
+      fs.writeFileSync(jsonOutput, JSON.stringify(analyzedData, null, 2));
     }
     
     // Print summary
@@ -265,7 +319,20 @@ async function main() {
     console.log(`  📊 JSON export: ${jsonOutput}`);
     console.log(`  🧠 Conversation history: ${path.join(logDir, `${sessionId}_history.json`)}`);
     
+    // Analysis results
+    if (analysis) {
+      console.log(`\n🧠 Analysis Results:`);
+      console.log(`  📊 Hook Strength: ${analysis.hook_strength}/10`);
+      console.log(`  🎯 Type: ${analysis.conversation_type}`);
+      console.log(`  💭 ${analysis.brief_explanation}`);
+      
+      if (analysis.hook_strength >= parseInt(config.ANALYSIS_FEATURE_THRESHOLD || '8')) {
+        console.log(`  ⭐ HIGH POTENTIAL - Consider featuring this conversation!`);
+      }
+    }
+    
     // Upload status
+    const shouldUpload = uploadOverride !== undefined ? uploadOverride : config.AUTO_UPLOAD === 'true';
     if (shouldUpload && config.UPLOAD_ENABLED === 'true') {
       if (uploadResult?.success) {
         console.log(`\n🌐 Online viewer: ${uploadResult.viewerUrl}`);
