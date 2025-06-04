@@ -9,6 +9,7 @@ A modern TypeScript system that enables two different Large Language Models (Ope
 - **Conversation history**: Maintains complete conversation context across all turns
 - **Comprehensive logging**: Detailed logs with timestamps and turn tracking
 - **JSON export**: Rich conversation data perfect for web applications and analysis
+- **🌐 Upload & Share**: Upload conversations to visualizer platform with direct viewer URLs
 - **Modern tooling**: Built with TypeScript, uses modern async/await patterns
 - **Minimal dependencies**: Only essential dependencies included
 - **Session management**: Each conversation gets a unique session ID with metadata
@@ -45,6 +46,13 @@ npm install
    ANTHROPIC_MODEL="claude-3-5-sonnet-20241022"
    CONVERSATION_TOPIC="Discuss the future of artificial intelligence"
    MAX_TURNS="10"
+   
+   # Upload Settings (Optional)
+   UPLOAD_ENABLED=true
+   UPLOAD_API_URL=https://uxx6unuo0e.execute-api.us-east-1.amazonaws.com/prod/upload
+   AUTO_UPLOAD=false
+   UPLOAD_MAX_RETRIES=3
+   UPLOAD_RETRY_DELAY=1000
    ```
 
 ### 3. Build the Project
@@ -66,6 +74,15 @@ npx tsx src/start-conversation.ts "Discuss the ethics of AI in healthcare"
 # Start conversation with custom topic and turn count
 npx tsx src/start-conversation.ts "Analyze renewable energy" 8
 
+# Generate and upload conversation automatically
+npx tsx src/start-conversation.ts "Future of AI" 10 --upload
+
+# Test upload configuration
+npx tsx src/start-conversation.ts --test-upload
+
+# Upload existing conversation file
+npx tsx src/start-conversation.ts --upload-file logs/conversation_123.json
+
 # See example topics for inspiration
 npx tsx src/start-conversation.ts --examples
 
@@ -75,6 +92,24 @@ npx tsx src/start-conversation.ts --random 12
 # Show help
 npx tsx src/start-conversation.ts --help
 ```
+
+### Upload & Share Conversations
+
+Upload conversations to the visualizer platform for easy sharing:
+
+```bash
+# Upload all existing conversations
+npx tsx src/upload-existing.ts --all
+
+# Upload recent conversations only
+npx tsx src/upload-existing.ts --recent 5
+
+# Test your upload configuration
+npx tsx src/start-conversation.ts --config
+```
+
+**Generated URLs**: Uploaded conversations get viewer URLs like:
+`https://modelstogether.com/#/conversation/ai-discussion-123`
 
 ### Production Mode
 
@@ -109,6 +144,8 @@ llm-conversation-ts/
 │   ├── history.ts               # Conversation history manager
 │   ├── openai-handler.ts        # OpenAI API handler
 │   ├── anthropic-handler.ts     # Anthropic API handler
+│   ├── upload-service.ts        # Upload functionality with retry logic
+│   ├── upload-existing.ts       # Batch upload utility for existing files
 │   ├── conversation.ts          # Main conversation orchestrator
 │   └── start-conversation.ts    # CLI wrapper with examples
 ├── logs/                        # Generated conversation logs and JSON
@@ -117,8 +154,30 @@ llm-conversation-ts/
 ├── tsconfig.json               # TypeScript configuration
 ├── config.env.example         # Configuration template
 ├── config.env                 # Your actual configuration (create this)
+├── UPLOAD.md                  # Upload feature documentation
 └── README.md                  # This file
 ```
+
+## 🌐 Upload & Share Feature
+
+Transform your local conversations into shareable online experiences! The upload feature enables seamless integration with the visualizer platform at `https://modelstogether.com`.
+
+### Quick Start
+```bash
+# Generate and upload a conversation
+npx tsx src/start-conversation.ts "AI Ethics Discussion" 10 --upload
+
+# Upload existing conversations
+npx tsx src/upload-existing.ts --all
+```
+
+### Features
+- **Instant Sharing**: Get direct viewer URLs for immediate sharing
+- **Batch Upload**: Upload multiple existing conversations at once
+- **Robust Reliability**: Built-in retry logic and error handling
+- **Flexible Control**: Upload on-demand or automatically
+
+**For complete upload documentation, see [UPLOAD.md](UPLOAD.md)**
 
 ## TypeScript Features
 
