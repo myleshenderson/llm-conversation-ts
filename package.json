@@ -8,7 +8,8 @@
     "dev": "tsx src/conversation.ts",
     "start": "node dist/conversation.js",
     "clean": "rm -rf dist",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "analyze-existing": "tsx scripts/analyze-existing.ts"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.0",
+    "openai": "^5.1.0",
     "p-retry": "^6.2.1"
   },
   "engines": {
