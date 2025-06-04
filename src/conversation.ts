@@ -235,7 +235,7 @@ async function main() {
       turnCount++;
       logger.log('INFO', `Turn ${turnCount}/${maxTurns}: OpenAI (with conversation history)`);
       
-      const openaiHandler = new OpenAIHandler(config, sessionId, turnCount);
+      const openaiHandler = new OpenAIHandler(config, sessionId, turnCount, topic);
       const openaiResult = await openaiHandler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', 'OpenAI response received');
@@ -253,7 +253,7 @@ async function main() {
       turnCount++;
       logger.log('INFO', `Turn ${turnCount}/${maxTurns}: Anthropic (with conversation history)`);
       
-      const anthropicHandler = new AnthropicHandler(config, sessionId, turnCount);
+      const anthropicHandler = new AnthropicHandler(config, sessionId, turnCount, topic);
       const anthropicResult = await anthropicHandler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', 'Anthropic response received');

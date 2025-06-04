@@ -10,7 +10,7 @@ export class OpenAIHandler {
   private logger: Logger;
   private historyManager: HistoryManager;
   
-  constructor(config: Config, sessionId: string, turnNumber: number) {
+  constructor(config: Config, sessionId: string, turnNumber: number, topic: string) {
     this.config = config;
     
     const logDir = path.join(process.cwd(), 'logs');
@@ -18,7 +18,7 @@ export class OpenAIHandler {
     const historyFile = path.join(logDir, `${sessionId}_history.json`);
     
     this.logger = new Logger(openaiLog, turnNumber);
-    this.historyManager = new HistoryManager(historyFile, config.CONVERSATION_TOPIC);
+    this.historyManager = new HistoryManager(historyFile, topic);
   }
   
   async processMessage(message: string, sessionId: string, turnNumber: number): Promise<AIHandlerResult> {
@@ -28,7 +28,7 @@ export class OpenAIHandler {
     
     try {
       // Build messages with history
-      const messages = this.historyManager.buildOpenAIMessages(message, this.config.CONVERSATION_TOPIC);
+      const messages = this.historyManager.buildOpenAIMessages(message);
       
       // Prepare API request
       const payload = {

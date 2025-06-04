@@ -38,7 +38,7 @@ export class HistoryManager {
     this.save();
   }
   
-  buildOpenAIMessages(newMessage: string, topic: string): OpenAIMessage[] {
+  buildOpenAIMessages(newMessage: string): OpenAIMessage[] {
     // Add new user message
     this.addMessage({ role: 'user', content: newMessage });
     
@@ -46,7 +46,7 @@ export class HistoryManager {
     const messages: OpenAIMessage[] = [
       {
         role: 'system',
-        content: `You are participating in a conversation with another AI about: ${topic}. This is an ongoing discussion - respond naturally and build upon what has been said before. Keep your responses concise but meaningful.`
+        content: `You are participating in a conversation with another AI about: ${this.history.conversation_topic}. This is an ongoing discussion - respond naturally and build upon what has been said before. Keep your responses concise but meaningful.`
       }
     ];
     

@@ -9,16 +9,18 @@ export class AnthropicHandler {
   private config: Config;
   private logger: Logger;
   private historyManager: HistoryManager;
+  private topic: string;
   
-  constructor(config: Config, sessionId: string, turnNumber: number) {
+  constructor(config: Config, sessionId: string, turnNumber: number, topic: string) {
     this.config = config;
+    this.topic = topic;
     
     const logDir = path.join(process.cwd(), 'logs');
     const anthropicLog = path.join(logDir, `${sessionId}_anthropic.log`);
     const historyFile = path.join(logDir, `${sessionId}_history.json`);
     
     this.logger = new Logger(anthropicLog, turnNumber);
-    this.historyManager = new HistoryManager(historyFile, config.CONVERSATION_TOPIC);
+    this.historyManager = new HistoryManager(historyFile, topic);
   }
   
   async processMessage(message: string, sessionId: string, turnNumber: number): Promise<AIHandlerResult> {
@@ -34,7 +36,7 @@ export class AnthropicHandler {
       const payload = {
         model: this.config.ANTHROPIC_MODEL,
         max_tokens: 1000,
-        system: `You are participating in a conversation with another AI about: ${this.config.CONVERSATION_TOPIC}. This is an ongoing discussion - respond naturally and build upon what has been said before. Keep your responses concise but meaningful.`,
+        system: `You are participating in a conversation with another AI about: ${this.topic}. This is an ongoing discussion - respond naturally and build upon what has been said before. Keep your responses concise but meaningful.`,
         messages
       };
       
