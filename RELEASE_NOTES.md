@@ -111,8 +111,8 @@ npx tsx src/start-conversation.ts "Private" 5 --no-upload
 ### Generated URLs
 Uploaded conversations get viewer URLs like:
 ```
-https://modelstogether.com/#/conversation/ai-ethics-discussion-123
-https://modelstogether.com/#/conversation/future-technology-456
+https://modelstogether.com/conversation/2025-06-04T00-28-13-235Z_ai-ethics-discussion.json
+https://modelstogether.com/conversation/2025-06-04T00-32-45-891Z_future-technology.json
 ```
 
 ---

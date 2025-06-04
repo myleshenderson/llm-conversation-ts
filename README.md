@@ -109,7 +109,7 @@ npx tsx src/start-conversation.ts --config
 ```
 
 **Generated URLs**: Uploaded conversations get viewer URLs like:
-`https://modelstogether.com/#/conversation/ai-discussion-123`
+`https://modelstogether.com/conversation/2025-06-04T00-28-13-235Z_ai-discussion.json`
 
 ### Production Mode
 

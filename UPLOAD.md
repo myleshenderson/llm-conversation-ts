@@ -118,11 +118,11 @@ $ npx tsx src/upload-existing.ts --recent 3
 
 📤 Uploading conversation_20250603_145230.json...
 ✅ Upload successful!
-🌐 https://modelstogether.com/#/conversation/2025-06-03T14-52-30-ai-discussion
+🌐 https://modelstogether.com/conversation/2025-06-03T14-52-30-ai-discussion.json
 
 📤 Uploading conversation_20250603_143015.json...
 ✅ Upload successful!
-🌐 https://modelstogether.com/#/conversation/2025-06-03T14-30-15-future-tech
+🌐 https://modelstogether.com/conversation/2025-06-03T14-30-15-future-tech.json
 
 📤 Uploading conversation_20250603_141800.json...
 ❌ Upload failed: Invalid conversation format
@@ -161,16 +161,16 @@ $ npx tsx src/upload-existing.ts --recent 3
 ### URL Format
 Uploaded conversations are accessible at:
 ```
-https://modelstogether.com/#/conversation/{filename_without_extension}
+https://modelstogether.com/conversation/{full_filename.json}
 ```
 
 ### Example URLs
 ```bash
 # Conversation file: conversation_20250603_ai-discussion.json
-# Viewer URL: https://modelstogether.com/#/conversation/2025-06-03T14-52-30-ai-discussion
+# Viewer URL: https://modelstogether.com/conversation/2025-06-03T14-52-30-ai-discussion.json
 
 # Conversation file: conversation_20250603_tech-trends.json  
-# Viewer URL: https://modelstogether.com/#/conversation/2025-06-03T14-30-15-tech-trends
+# Viewer URL: https://modelstogether.com/conversation/2025-06-03T14-30-15-tech-trends.json
 ```
 
 ### Sharing URLs
