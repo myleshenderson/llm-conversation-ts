@@ -124,8 +124,8 @@ export class UploadService {
    * Generate viewer URL from filename
    */
   generateViewerUrl(filename: string): string {
-    const cleanFilename = path.basename(filename);
-    return `https://modelstogether.com/conversation/${cleanFilename}`;
+    const cleanFilename = path.basename(filename, '.json');
+    return `https://modelstogether.com/conversation/${cleanFilename}.json`;
   }
 
   /**
