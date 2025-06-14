@@ -7,6 +7,7 @@ import { Logger } from './logger';
 import { createUploadService } from './upload-service';
 import { ComprehensiveConversation, TurnMetadata, LLMIdentifier, LLMProvider } from './types';
 import { LLMHandlerFactory } from './llm-handler-factory';
+import { ConversationAdapter } from './conversation-adapter';
 
 function generateSessionId(topic: string): string {
   const topicSlug = topic.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30);
@@ -159,9 +160,9 @@ async function main() {
   const sessionId = generateSessionId(topic);
   const sessionLog = path.join(logDir, `${sessionId}.log`);
   
-  // Get models for display
-  const llm1Model = llm1Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
-  const llm2Model = llm2Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
+  // Get models for display using ConversationAdapter
+  const llm1Model = ConversationAdapter.getModelForLLM('llm1', config);
+  const llm2Model = ConversationAdapter.getModelForLLM('llm2', config);
   
   // Initialize session log
   const sessionHeader = [
@@ -190,9 +191,9 @@ async function main() {
     while (turnCount < maxTurns) {
       // LLM1 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM1 (${llm1Provider}) (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM1 (${llm1Provider}:${llm1Model}) (with conversation history)`);
       
-      const llm1Handler = LLMHandlerFactory.createHandler(llm1Provider, config, sessionId, turnCount);
+      const llm1Handler = LLMHandlerFactory.createHandlerForLLM('llm1', config, sessionId, turnCount);
       const llm1Result = await llm1Handler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', `LLM1 (${llm1Provider}) response received`);
@@ -208,9 +209,9 @@ async function main() {
       
       // LLM2 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM2 (${llm2Provider}) (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM2 (${llm2Provider}:${llm2Model}) (with conversation history)`);
       
-      const llm2Handler = LLMHandlerFactory.createHandler(llm2Provider, config, sessionId, turnCount);
+      const llm2Handler = LLMHandlerFactory.createHandlerForLLM('llm2', config, sessionId, turnCount);
       const llm2Result = await llm2Handler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', `LLM2 (${llm2Provider}) response received`);

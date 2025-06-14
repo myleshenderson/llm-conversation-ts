@@ -41,8 +41,17 @@ export class ConversationAdapter {
   
   /**
    * Gets the model configuration for a specific LLM identifier
+   * Uses LLM-specific model if configured, otherwise falls back to provider default
    */
   static getModelForLLM(llmId: LLMIdentifier, config: Config): string {
+    // Check for LLM-specific model configuration first
+    const specificModel = llmId === 'llm1' ? config.LLM1_MODEL : config.LLM2_MODEL;
+    
+    if (specificModel) {
+      return specificModel;
+    }
+    
+    // Fall back to provider default
     const provider = this.getProviderForLLM(llmId, config);
     
     switch (provider) {

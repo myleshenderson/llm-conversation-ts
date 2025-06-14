@@ -6,14 +6,18 @@ export interface Config {
   LLM1_PROVIDER: LLMProvider;
   LLM2_PROVIDER: LLMProvider;
   
+  // LLM Model Configuration (optional - uses provider defaults if not specified)
+  LLM1_MODEL?: string;
+  LLM2_MODEL?: string;
+  
   // OpenAI Configuration
   OPENAI_API_KEY: string;
-  OPENAI_MODEL: string;
+  OPENAI_MODEL: string;  // Default model for OpenAI
   OPENAI_BASE_URL: string;
   
   // Anthropic Configuration
   ANTHROPIC_API_KEY: string;
-  ANTHROPIC_MODEL: string;
+  ANTHROPIC_MODEL: string;  // Default model for Anthropic
   ANTHROPIC_BASE_URL: string;
   
   // Conversation Settings

@@ -70,6 +70,21 @@ npm install
    - Set both to "anthropic" to have two Claude models talk
    - Set both to "openai" to have two GPT models talk
    - Mix and match as desired
+   
+   **NEW**: You can also specify different models within the same provider:
+   ```bash
+   # Use different GPT models
+   LLM1_PROVIDER="openai"
+   LLM1_MODEL="gpt-4"
+   LLM2_PROVIDER="openai"
+   LLM2_MODEL="gpt-3.5-turbo"
+   
+   # Use different Claude models
+   LLM1_PROVIDER="anthropic"
+   LLM1_MODEL="claude-3-5-sonnet-20241022"
+   LLM2_PROVIDER="anthropic"
+   LLM2_MODEL="claude-3-haiku-20240307"
+   ```
 
 ### 3. Build the Project
 

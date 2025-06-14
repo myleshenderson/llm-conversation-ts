@@ -10,9 +10,11 @@ export class OpenAIHandler implements LLMHandler {
   private config: Config;
   private logger: Logger;
   private historyManager: HistoryManager;
+  private model: string;
   
-  constructor(config: Config, sessionId: string, turnNumber: number) {
+  constructor(config: Config, sessionId: string, turnNumber: number, model?: string) {
     this.config = config;
+    this.model = model || config.OPENAI_MODEL;
     
     const logDir = path.join(process.cwd(), 'logs');
     const openaiLog = path.join(logDir, `${sessionId}_openai.log`);
@@ -33,7 +35,7 @@ export class OpenAIHandler implements LLMHandler {
       
       // Prepare API request
       const payload = {
-        model: this.config.OPENAI_MODEL,
+        model: this.model,
         messages,
         max_tokens: 1000,
         temperature: 0.7
@@ -45,7 +47,7 @@ export class OpenAIHandler implements LLMHandler {
       };
       
       this.logger.log('DEBUG', `Sending request to OpenAI API with ${messages.length} messages in history`);
-      this.logger.log('DEBUG', `Model: ${this.config.OPENAI_MODEL}`);
+      this.logger.log('DEBUG', `Model: ${this.model}`);
       
       // Make API call with retry logic
       const startTime = Date.now();

@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config } from './types';
+import { Config, LLMProvider } from './types';
+import { isModelSupported, getModelListForError } from './model-registry';
 
 export function loadConfig(): Config {
   const configPath = path.join(__dirname, '..', 'config.env');
@@ -71,6 +72,26 @@ export function loadConfig(): Config {
         console.error(`Error: Missing required config field: ${field} for provider: ${provider}`);
         process.exit(1);
       }
+    }
+  }
+
+  // Validate model configurations if specified
+  const llm1Model = (config as any)['LLM1_MODEL'];
+  const llm2Model = (config as any)['LLM2_MODEL'];
+  
+  if (llm1Model) {
+    if (!isModelSupported(llm1Provider as LLMProvider, llm1Model)) {
+      console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${llm1Provider}'.`);
+      console.error(`Supported models: ${getModelListForError(llm1Provider as LLMProvider)}`);
+      process.exit(1);
+    }
+  }
+  
+  if (llm2Model) {
+    if (!isModelSupported(llm2Provider as LLMProvider, llm2Model)) {
+      console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${llm2Provider}'.`);
+      console.error(`Supported models: ${getModelListForError(llm2Provider as LLMProvider)}`);
+      process.exit(1);
     }
   }
 
