@@ -5,7 +5,8 @@ A modern TypeScript system that enables two different Large Language Models (Ope
 ## Features
 
 - **Full TypeScript implementation**: Type-safe conversation management with comprehensive interfaces
-- **Two-way LLM conversations**: OpenAI GPT and Anthropic Claude exchange messages with full context
+- **Configurable LLM providers**: Choose which provider (OpenAI/Anthropic) to use for LLM1 and LLM2
+- **Two-way LLM conversations**: Any combination of OpenAI GPT and Anthropic Claude can exchange messages
 - **Conversation history**: Maintains complete conversation context across all turns
 - **Comprehensive logging**: Detailed logs with timestamps and turn tracking
 - **JSON export**: Rich conversation data perfect for web applications and analysis
@@ -37,15 +38,25 @@ npm install
 
 2. Edit `config.env` and add your API keys:
    ```bash
-   # Required: Add your actual API keys
-   OPENAI_API_KEY="sk-your-actual-openai-key-here"
-   ANTHROPIC_API_KEY="sk-ant-your-actual-anthropic-key-here"
+   # LLM Provider Selection
+   # Choose which provider to use for each LLM (openai or anthropic)
+   LLM1_PROVIDER="openai"
+   LLM2_PROVIDER="anthropic"
    
-   # Optional: Customize models and settings
+   # OpenAI Configuration
+   OPENAI_API_KEY="sk-your-actual-openai-key-here"
    OPENAI_MODEL="gpt-4"
+   OPENAI_BASE_URL="https://api.openai.com/v1"
+   
+   # Anthropic Configuration
+   ANTHROPIC_API_KEY="sk-ant-your-actual-anthropic-key-here"
    ANTHROPIC_MODEL="claude-3-5-sonnet-20241022"
+   ANTHROPIC_BASE_URL="https://api.anthropic.com/v1"
+   
+   # Conversation Settings
    CONVERSATION_TOPIC="Discuss the future of artificial intelligence"
    MAX_TURNS="10"
+   DELAY_BETWEEN_MESSAGES="2"
    
    # Upload Settings (Optional)
    UPLOAD_ENABLED=true
@@ -54,6 +65,11 @@ npm install
    UPLOAD_MAX_RETRIES=3
    UPLOAD_RETRY_DELAY=1000
    ```
+   
+   **Note**: You can now configure which provider (OpenAI or Anthropic) to use for LLM1 and LLM2. For example:
+   - Set both to "anthropic" to have two Claude models talk
+   - Set both to "openai" to have two GPT models talk
+   - Mix and match as desired
 
 ### 3. Build the Project
 

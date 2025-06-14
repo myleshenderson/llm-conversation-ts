@@ -1,14 +1,27 @@
+export type LLMProvider = 'openai' | 'anthropic';
+export type LLMIdentifier = 'llm1' | 'llm2';
+
 export interface Config {
+  // LLM Provider Configuration
+  LLM1_PROVIDER: LLMProvider;
+  LLM2_PROVIDER: LLMProvider;
+  
+  // OpenAI Configuration
   OPENAI_API_KEY: string;
-  ANTHROPIC_API_KEY: string;
   OPENAI_MODEL: string;
-  ANTHROPIC_MODEL: string;
   OPENAI_BASE_URL: string;
+  
+  // Anthropic Configuration
+  ANTHROPIC_API_KEY: string;
+  ANTHROPIC_MODEL: string;
   ANTHROPIC_BASE_URL: string;
+  
+  // Conversation Settings
   CONVERSATION_TOPIC: string;
   MAX_TURNS: string;
   DELAY_BETWEEN_MESSAGES: string;
   LOG_LEVEL?: string;
+  
   // Upload Settings
   UPLOAD_ENABLED?: string;
   UPLOAD_API_URL?: string;
@@ -20,7 +33,7 @@ export interface Config {
 export interface ConversationMessage {
   role?: 'user' | 'assistant' | 'system';
   content: string;
-  speaker?: 'openai' | 'anthropic';
+  speaker?: LLMProvider;
 }
 
 export interface ConversationHistory {
@@ -38,7 +51,7 @@ export interface TokenUsage {
 
 export interface TurnMetadata {
   turn: number;
-  speaker: 'openai' | 'anthropic';
+  speaker: LLMProvider;
   model: string;
   timestamp: string;
   input: string;
@@ -80,8 +93,9 @@ export interface ComprehensiveConversation {
   metadata: ConversationMetadata;
   conversation: ConversationData;
   models: {
-    openai: ModelInfo;
-    anthropic: ModelInfo;
+    openai?: ModelInfo;
+    anthropic?: ModelInfo;
+    [key: string]: ModelInfo | undefined;
   };
   statistics: ConversationStatistics;
   turns: TurnMetadata[];
