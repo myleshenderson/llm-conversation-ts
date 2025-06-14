@@ -73,18 +73,42 @@ export class HistoryManager {
     
     // Build Anthropic format messages (user/assistant alternating)
     const messages: AnthropicMessage[] = [];
+    const totalMessages = this.history.messages.length;
+    let cacheBlocksUsed = 0;
+    const maxCacheBlocks = 4; // Anthropic limit
     
-    // Convert history to Anthropic format
-    for (const msg of this.history.messages) {
+    // Convert history to Anthropic format with limited cache control
+    for (let i = 0; i < this.history.messages.length; i++) {
+      const msg = this.history.messages[i];
+      const isLastFewMessages = i >= totalMessages - 2; // Don't cache last 2 messages
+      const canAddCache = cacheBlocksUsed < maxCacheBlocks && !isLastFewMessages;
+      
+      let content: string | Array<any>;
+      
+      if (canAddCache && totalMessages > 6) { // Only use caching for longer conversations
+        // Add cache control to strategic older messages
+        content = [{
+          type: 'text',
+          text: msg.content,
+          cache_control: {
+            type: 'ephemeral'
+          }
+        }];
+        cacheBlocksUsed++;
+      } else {
+        // Keep as simple strings (no caching)
+        content = msg.content;
+      }
+      
       if (msg.speaker === 'openai') {
-        messages.push({ role: 'assistant', content: msg.content });
+        messages.push({ role: 'assistant', content });
       } else if (msg.role && msg.role !== 'system') {
         messages.push({ 
           role: msg.role as 'user' | 'assistant', 
-          content: msg.content 
+          content 
         });
       } else {
-        messages.push({ role: 'user', content: msg.content });
+        messages.push({ role: 'user', content });
       }
     }
     

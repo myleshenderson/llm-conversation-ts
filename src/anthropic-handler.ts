@@ -46,7 +46,8 @@ export class AnthropicHandler implements LLMHandler {
       const headers = {
         'Content-Type': 'application/json',
         'x-api-key': this.config.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31'
       };
       
       this.logger.log('DEBUG', `Sending request to Anthropic API with ${messages.length} messages in history`);
