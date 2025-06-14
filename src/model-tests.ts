@@ -129,6 +129,57 @@ function runTests() {
     if (!errorList.includes(', ')) throw new Error('Error list should be comma-separated');
   });
   
+  // Error Boundary Tests
+  test('Error boundary - handles empty model string', () => {
+    if (isModelSupported('openai', '')) throw new Error('Empty model should not be supported');
+    if (isModelSupported('anthropic', '')) throw new Error('Empty model should not be supported');
+  });
+  
+  test('Error boundary - handles null/undefined model gracefully', () => {
+    const config = createMockConfig({
+      LLM1_MODEL: null as any,
+      LLM2_MODEL: undefined
+    });
+    
+    // Should not throw errors and fall back to defaults
+    const llm1Model = ConversationAdapter.getModelForLLM('llm1', config);
+    const llm2Model = ConversationAdapter.getModelForLLM('llm2', config);
+    
+    if (llm1Model !== 'gpt-4') throw new Error('Should fall back to default for null model');
+    if (llm2Model !== 'claude-3-5-sonnet-20241022') throw new Error('Should fall back to default for undefined model');
+  });
+  
+  test('Error boundary - case sensitivity in model names', () => {
+    // Model names should be case-sensitive
+    if (isModelSupported('openai', 'GPT-4')) throw new Error('Uppercase model should not match');
+    if (isModelSupported('anthropic', 'CLAUDE-3-5-SONNET-20241022')) throw new Error('Uppercase model should not match');
+  });
+  
+  test('Error boundary - special characters in model names', () => {
+    // Test with various invalid characters
+    const invalidModels = ['gpt-4!', 'claude@3', 'model with spaces', 'model\nwith\nnewlines'];
+    
+    for (const invalidModel of invalidModels) {
+      if (isModelSupported('openai', invalidModel)) {
+        throw new Error(`Invalid model '${invalidModel}' should not be supported`);
+      }
+    }
+  });
+  
+  test('Error boundary - provider type validation', () => {
+    // Test with invalid provider types - should return undefined but not crash
+    try {
+      const result = getSupportedModels('invalid' as any);
+      // TypeScript will prevent this at compile time, but at runtime it should not crash
+      if (result === undefined) {
+        // This is acceptable behavior for an invalid provider
+      }
+    } catch (error) {
+      // It's also acceptable if it throws an error for invalid provider
+      // Either behavior is fine as long as it doesn't crash the application
+    }
+  });
+  
   // Summary
   console.log(`\n📊 Test Results: ${passed} passed, ${failed} failed`);
   

@@ -79,18 +79,18 @@ export function loadConfig(): Config {
   const llm1Model = (config as any)['LLM1_MODEL'];
   const llm2Model = (config as any)['LLM2_MODEL'];
   
-  if (llm1Model) {
-    if (!isModelSupported(llm1Provider as LLMProvider, llm1Model)) {
+  if (llm1Model && llm1Provider && (llm1Provider === 'openai' || llm1Provider === 'anthropic')) {
+    if (!isModelSupported(llm1Provider, llm1Model)) {
       console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${llm1Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(llm1Provider as LLMProvider)}`);
+      console.error(`Supported models: ${getModelListForError(llm1Provider)}`);
       process.exit(1);
     }
   }
   
-  if (llm2Model) {
-    if (!isModelSupported(llm2Provider as LLMProvider, llm2Model)) {
+  if (llm2Model && llm2Provider && (llm2Provider === 'openai' || llm2Provider === 'anthropic')) {
+    if (!isModelSupported(llm2Provider, llm2Model)) {
       console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${llm2Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(llm2Provider as LLMProvider)}`);
+      console.error(`Supported models: ${getModelListForError(llm2Provider)}`);
       process.exit(1);
     }
   }
