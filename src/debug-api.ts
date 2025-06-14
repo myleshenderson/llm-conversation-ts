@@ -36,7 +36,7 @@ async function debugAPIConnectivity() {
         console.log(`Response Status: ${response.status} ${response.statusText}`);
         
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { data?: any[] };
           const gptModels = data.data?.filter((model: any) => 
             model.id.includes('gpt-') && 
             !model.id.includes('instruct')
@@ -98,7 +98,7 @@ async function debugAPIConnectivity() {
         console.log(`Response Status: ${response.status} ${response.statusText}`);
         
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { data?: any[] };
           const models = data.data || [];
           
           console.log(`✅ Success! Found ${models.length} models:`);

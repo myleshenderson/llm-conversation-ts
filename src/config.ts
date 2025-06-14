@@ -84,7 +84,14 @@ export function loadConfig(): Config {
   const llm1Model = configData['LLM1_MODEL'];
   const llm2Model = configData['LLM2_MODEL'];
   
+  // Validate model configurations with comprehensive null safety
   if (llm1Model && llm1Model.trim() !== '') {
+    // Extra defensive check to ensure typedLlm1Provider is valid
+    if (!typedLlm1Provider) {
+      console.error('Error: LLM1_PROVIDER is undefined during model validation');
+      process.exit(1);
+    }
+    
     if (!isModelSupported(typedLlm1Provider, llm1Model)) {
       console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${typedLlm1Provider}'.`);
       console.error(`Supported models: ${getModelListForError(typedLlm1Provider)}`);
@@ -93,6 +100,12 @@ export function loadConfig(): Config {
   }
   
   if (llm2Model && llm2Model.trim() !== '') {
+    // Extra defensive check to ensure typedLlm2Provider is valid
+    if (!typedLlm2Provider) {
+      console.error('Error: LLM2_PROVIDER is undefined during model validation');
+      process.exit(1);
+    }
+    
     if (!isModelSupported(typedLlm2Provider, llm2Model)) {
       console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${typedLlm2Provider}'.`);
       console.error(`Supported models: ${getModelListForError(typedLlm2Provider)}`);

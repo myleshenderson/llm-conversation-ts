@@ -85,6 +85,7 @@ export interface ConversationStatistics {
 export interface ModelInfo {
   model: string;
   api_base: string;
+  provider?: string; // Optional provider field for enhanced model info
 }
 
 export interface ConversationData {

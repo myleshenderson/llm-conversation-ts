@@ -67,7 +67,9 @@ function createComprehensiveJson(
   anthropicTokens: number,
   logDir: string,
   llm1Provider: LLMProvider,
-  llm2Provider: LLMProvider
+  llm2Provider: LLMProvider,
+  llm1Model: string,
+  llm2Model: string
 ): string {
   // Calculate average response time
   const avgResponseTime = turns.length > 0 
@@ -90,14 +92,26 @@ function createComprehensiveJson(
       actual_turns: actualTurns
     },
     models: {
+      // Show the actual models used for each LLM, not just provider defaults
+      llm1: {
+        provider: llm1Provider,
+        model: llm1Model,
+        api_base: llm1Provider === 'openai' ? config.OPENAI_BASE_URL : config.ANTHROPIC_BASE_URL
+      },
+      llm2: {
+        provider: llm2Provider,
+        model: llm2Model,
+        api_base: llm2Provider === 'openai' ? config.OPENAI_BASE_URL : config.ANTHROPIC_BASE_URL
+      },
+      // Also include provider defaults for reference
       ...(llm1Provider === 'openai' || llm2Provider === 'openai' ? {
-        openai: {
+        openai_defaults: {
           model: config.OPENAI_MODEL,
           api_base: config.OPENAI_BASE_URL
         }
       } : {}),
       ...(llm1Provider === 'anthropic' || llm2Provider === 'anthropic' ? {
-        anthropic: {
+        anthropic_defaults: {
           model: config.ANTHROPIC_MODEL,
           api_base: config.ANTHROPIC_BASE_URL
         }
@@ -143,8 +157,8 @@ async function main() {
     process.exit(1);
   }
   
-  // Load configuration
-  const config = loadConfig();
+  // Load configuration with automatic dynamic model discovery
+  const config = await (await import('./auto-config')).loadAutoConfig();
   
   // Get providers for LLM1 and LLM2
   const llm1Provider = LLMHandlerFactory.getProviderForLLM('llm1', config);
@@ -246,7 +260,9 @@ async function main() {
       anthropicTokens,
       logDir,
       llm1Provider,
-      llm2Provider
+      llm2Provider,
+      llm1Model,
+      llm2Model
     );
     
     logger.log('INFO', `Comprehensive JSON export completed: ${jsonOutput}`);
