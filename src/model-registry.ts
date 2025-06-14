@@ -23,7 +23,14 @@ export const SUPPORTED_MODELS: Record<LLMProvider, readonly string[]> = {
   ] as const,
   
   anthropic: [
-    // Claude 3.5 models
+    // Claude 4 models (latest)
+    'claude-opus-4-20250514',
+    'claude-sonnet-4-20250514',
+    
+    // Claude 3.7 models
+    'claude-3-7-sonnet-20250219',
+    
+    // Claude 3.5 models  
     'claude-3-5-sonnet-20241022',
     'claude-3-5-haiku-20241022',
     
