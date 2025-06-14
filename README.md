@@ -6,6 +6,8 @@ A modern TypeScript system that enables two different Large Language Models (Ope
 
 - **Full TypeScript implementation**: Type-safe conversation management with comprehensive interfaces
 - **Configurable LLM providers**: Choose which provider (OpenAI/Anthropic) to use for LLM1 and LLM2
+- **Multi-model support**: Use different models within same provider (e.g., GPT-4 vs GPT-3.5-turbo)
+- **🆕 Dynamic model discovery**: Automatically fetch latest models from provider APIs with caching
 - **Two-way LLM conversations**: Any combination of OpenAI GPT and Anthropic Claude can exchange messages
 - **Conversation history**: Maintains complete conversation context across all turns
 - **Comprehensive logging**: Detailed logs with timestamps and turn tracking
@@ -86,6 +88,18 @@ npm install
    LLM2_MODEL="claude-3-haiku-20240307"
    ```
 
+   **🆕 DYNAMIC MODEL DISCOVERY**: Automatically fetch latest available models from provider APIs:
+   ```bash
+   # List available models (static registry)
+   npx tsx src/list-models.ts
+   
+   # List available models (dynamic from APIs)
+   npx tsx src/list-models.ts --dynamic
+   
+   # List models for specific provider
+   npx tsx src/list-models.ts --provider anthropic --dynamic
+   ```
+
 ### 3. Build the Project
 
 ```bash
@@ -141,6 +155,39 @@ npx tsx src/start-conversation.ts --config
 
 **Generated URLs**: Uploaded conversations get viewer URLs like:
 `https://modelstogether.com/conversation/2025-06-04T00-28-13-235Z_ai-discussion.json`
+
+### Dynamic Model Discovery
+
+Automatically discover and validate models from provider APIs instead of relying on hardcoded lists:
+
+```bash
+# List all available models (static registry)
+npx tsx src/list-models.ts
+
+# Fetch latest models from provider APIs
+npx tsx src/list-models.ts --dynamic
+
+# List models for specific provider only
+npx tsx src/list-models.ts --provider anthropic --dynamic
+npx tsx src/list-models.ts --provider openai --dynamic
+```
+
+**Enhanced Configuration with Dynamic Models:**
+```typescript
+import { loadEnhancedConfig } from './src/enhanced-config';
+
+// Use dynamic model validation (fetches from APIs)
+const config = await loadEnhancedConfig({ 
+  useDynamicModels: true,
+  validateModelsOnStartup: true 
+});
+```
+
+**Benefits:**
+- **Always up-to-date**: Automatically discover new models as providers release them
+- **Intelligent caching**: Models cached for 24 hours to minimize API calls  
+- **Graceful fallback**: Falls back to static list if API unavailable
+- **Error prevention**: Validates models exist before starting conversations
 
 ### Production Mode
 
