@@ -133,7 +133,13 @@ export interface OpenAIResponse {
 
 export interface AnthropicMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: string | Array<{
+    type: 'text';
+    text: string;
+    cache_control?: {
+      type: 'ephemeral';
+    };
+  }>;
 }
 
 export interface AnthropicResponse {
