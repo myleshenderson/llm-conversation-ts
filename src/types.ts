@@ -1,5 +1,6 @@
 export type LLMProvider = 'openai' | 'anthropic';
 export type LLMIdentifier = 'llm1' | 'llm2';
+export type SpeakerPosition = 'speaker_1' | 'speaker_2';
 
 export interface Config {
   // LLM Provider Configuration
@@ -55,7 +56,7 @@ export interface TokenUsage {
 
 export interface TurnMetadata {
   turn: number;
-  speaker: LLMProvider;
+  speaker: SpeakerPosition; // Changed from LLMProvider to SpeakerPosition for visual alternation
   model: string;
   timestamp: string;
   input: string;
@@ -73,6 +74,11 @@ export interface ConversationMetadata {
   status: 'completed' | 'failed' | 'in_progress';
   version: string;
   features: string[];
+  // LLM configuration metadata for visualizer integration
+  llm1_provider?: string;
+  llm1_model?: string;
+  llm2_provider?: string;
+  llm2_model?: string;
 }
 
 export interface ConversationStatistics {

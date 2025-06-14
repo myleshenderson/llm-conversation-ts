@@ -84,7 +84,12 @@ function createComprehensiveJson(
       duration_seconds: duration,
       status: 'completed',
       version: '2.0',
-      features: ['conversation_history', 'context_aware', 'typescript_native']
+      features: ['conversation_history', 'context_aware', 'typescript_native'],
+      // LLM configuration for visualizer integration
+      llm1_provider: llm1Provider,
+      llm1_model: llm1Model,
+      llm2_provider: llm2Provider,
+      llm2_model: llm2Model
     },
     conversation: {
       topic,

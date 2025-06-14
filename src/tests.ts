@@ -100,26 +100,37 @@ function runTests() {
   
   // Test LLMHandlerFactory.createHandler
   test('LLMHandlerFactory.createHandler - creates OpenAI handler', () => {
-    const handler = LLMHandlerFactory.createHandler('openai', mockConfig, 'test-session', 1);
+    const handler = LLMHandlerFactory.createHandler('openai', mockConfig, 'test-session', 1, 'speaker_1');
     if (!handler) throw new Error('Handler not created');
     if (handler.constructor.name !== 'OpenAIHandler') throw new Error('Wrong handler type');
   });
   
   test('LLMHandlerFactory.createHandler - creates Anthropic handler', () => {
-    const handler = LLMHandlerFactory.createHandler('anthropic', mockConfig, 'test-session', 1);
+    const handler = LLMHandlerFactory.createHandler('anthropic', mockConfig, 'test-session', 1, 'speaker_2');
     if (!handler) throw new Error('Handler not created');
     if (handler.constructor.name !== 'AnthropicHandler') throw new Error('Wrong handler type');
   });
   
   test('LLMHandlerFactory.createHandler - throws error for invalid provider', () => {
     try {
-      LLMHandlerFactory.createHandler('invalid' as LLMProvider, mockConfig, 'test-session', 1);
+      LLMHandlerFactory.createHandler('invalid' as LLMProvider, mockConfig, 'test-session', 1, 'speaker_1');
       throw new Error('Should have thrown an error');
     } catch (error) {
       if (!(error instanceof Error) || !error.message.includes('Unsupported LLM provider')) {
         throw new Error('Wrong error message');
       }
     }
+  });
+  
+  // Test speaker position mapping
+  test('LLMHandlerFactory.getSpeakerPositionForLLM - llm1 maps to speaker_1', () => {
+    const result = LLMHandlerFactory.getSpeakerPositionForLLM('llm1');
+    if (result !== 'speaker_1') throw new Error(`Expected 'speaker_1', got '${result}'`);
+  });
+  
+  test('LLMHandlerFactory.getSpeakerPositionForLLM - llm2 maps to speaker_2', () => {
+    const result = LLMHandlerFactory.getSpeakerPositionForLLM('llm2');
+    if (result !== 'speaker_2') throw new Error(`Expected 'speaker_2', got '${result}'`);
   });
   
   // Test provider configuration validation

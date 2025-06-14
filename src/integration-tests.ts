@@ -200,7 +200,7 @@ function runIntegrationTests() {
     const config = createMockConfig();
     
     // Test direct handler creation with model parameter
-    const handler = LLMHandlerFactory.createHandler('openai', config, 'test-session', 1, 'gpt-3.5-turbo');
+    const handler = LLMHandlerFactory.createHandler('openai', config, 'test-session', 1, 'speaker_1', 'gpt-3.5-turbo');
     
     if (!handler) throw new Error('Handler should be created');
     if (handler.constructor.name !== 'OpenAIHandler') {
@@ -212,7 +212,7 @@ function runIntegrationTests() {
     const config = createMockConfig();
     
     try {
-      LLMHandlerFactory.createHandler('invalid' as any, config, 'test-session', 1);
+      LLMHandlerFactory.createHandler('invalid' as any, config, 'test-session', 1, 'speaker_1');
       throw new Error('Should have thrown error for invalid provider');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
