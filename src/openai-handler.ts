@@ -4,8 +4,9 @@ import { Config, OpenAIResponse, TurnMetadata, AIHandlerResult } from './types';
 import { Logger } from './logger';
 import { HistoryManager } from './history';
 import { withRetry, DEFAULT_RETRY_OPTIONS } from './retry-utils';
+import { LLMHandler } from './llm-handler-interface';
 
-export class OpenAIHandler {
+export class OpenAIHandler implements LLMHandler {
   private config: Config;
   private logger: Logger;
   private historyManager: HistoryManager;

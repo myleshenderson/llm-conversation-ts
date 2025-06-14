@@ -4,10 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { loadConfig } from './config';
 import { Logger } from './logger';
-import { OpenAIHandler } from './openai-handler';
-import { AnthropicHandler } from './anthropic-handler';
 import { createUploadService } from './upload-service';
-import { ComprehensiveConversation, TurnMetadata } from './types';
+import { ComprehensiveConversation, TurnMetadata, LLMIdentifier, LLMProvider } from './types';
+import { LLMHandlerFactory } from './llm-handler-factory';
 
 function generateSessionId(topic: string): string {
   const topicSlug = topic.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30);
@@ -38,9 +37,10 @@ function collectTurnData(logDir: string, sessionId: string): {
       const tokens = turnData.tokens?.total || 0;
       totalTokens += tokens;
       
+      // Still track by provider for statistics
       if (turnData.speaker === 'openai') {
         openaiTokens += tokens;
-      } else {
+      } else if (turnData.speaker === 'anthropic') {
         anthropicTokens += tokens;
       }
     } catch (error) {
@@ -64,7 +64,9 @@ function createComprehensiveJson(
   totalTokens: number,
   openaiTokens: number,
   anthropicTokens: number,
-  logDir: string
+  logDir: string,
+  llm1Provider: LLMProvider,
+  llm2Provider: LLMProvider
 ): string {
   // Calculate average response time
   const avgResponseTime = turns.length > 0 
@@ -87,14 +89,18 @@ function createComprehensiveJson(
       actual_turns: actualTurns
     },
     models: {
-      openai: {
-        model: config.OPENAI_MODEL,
-        api_base: config.OPENAI_BASE_URL
-      },
-      anthropic: {
-        model: config.ANTHROPIC_MODEL,
-        api_base: config.ANTHROPIC_BASE_URL
-      }
+      ...(llm1Provider === 'openai' || llm2Provider === 'openai' ? {
+        openai: {
+          model: config.OPENAI_MODEL,
+          api_base: config.OPENAI_BASE_URL
+        }
+      } : {}),
+      ...(llm1Provider === 'anthropic' || llm2Provider === 'anthropic' ? {
+        anthropic: {
+          model: config.ANTHROPIC_MODEL,
+          api_base: config.ANTHROPIC_BASE_URL
+        }
+      } : {})
     },
     statistics: {
       total_tokens: totalTokens,
@@ -139,6 +145,10 @@ async function main() {
   // Load configuration
   const config = loadConfig();
   
+  // Get providers for LLM1 and LLM2
+  const llm1Provider = LLMHandlerFactory.getProviderForLLM('llm1', config);
+  const llm2Provider = LLMHandlerFactory.getProviderForLLM('llm2', config);
+  
   // Setup directories and files
   const logDir = path.join(process.cwd(), 'logs');
   if (!fs.existsSync(logDir)) {
@@ -149,12 +159,16 @@ async function main() {
   const sessionId = generateSessionId(topic);
   const sessionLog = path.join(logDir, `${sessionId}.log`);
   
+  // Get models for display
+  const llm1Model = llm1Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
+  const llm2Model = llm2Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
+  
   // Initialize session log
   const sessionHeader = [
     `=== LLM Conversation Session: ${sessionId} ===`,
     `Topic: ${topic}`,
     `Max Turns: ${maxTurns}`,
-    `Models: OpenAI(${config.OPENAI_MODEL}) <-> Anthropic(${config.ANTHROPIC_MODEL})`,
+    `Models: LLM1(${llm1Provider}:${llm1Model}) <-> LLM2(${llm2Provider}:${llm2Model})`,
     '='.repeat(50),
     ''
   ].join('\n');
@@ -174,15 +188,15 @@ async function main() {
   
   try {
     while (turnCount < maxTurns) {
-      // OpenAI turn
+      // LLM1 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: OpenAI (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM1 (${llm1Provider}) (with conversation history)`);
       
-      const openaiHandler = new OpenAIHandler(config, sessionId, turnCount);
-      const openaiResult = await openaiHandler.processMessage(currentMessage, sessionId, turnCount);
+      const llm1Handler = LLMHandlerFactory.createHandler(llm1Provider, config, sessionId, turnCount);
+      const llm1Result = await llm1Handler.processMessage(currentMessage, sessionId, turnCount);
       
-      logger.log('INFO', 'OpenAI response received');
-      currentMessage = openaiResult.response;
+      logger.log('INFO', `LLM1 (${llm1Provider}) response received`);
+      currentMessage = llm1Result.response;
       
       if (turnCount >= maxTurns) {
         break;
@@ -192,15 +206,15 @@ async function main() {
       const delay = parseFloat(config.DELAY_BETWEEN_MESSAGES || '2') * 1000;
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      // Anthropic turn
+      // LLM2 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: Anthropic (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM2 (${llm2Provider}) (with conversation history)`);
       
-      const anthropicHandler = new AnthropicHandler(config, sessionId, turnCount);
-      const anthropicResult = await anthropicHandler.processMessage(currentMessage, sessionId, turnCount);
+      const llm2Handler = LLMHandlerFactory.createHandler(llm2Provider, config, sessionId, turnCount);
+      const llm2Result = await llm2Handler.processMessage(currentMessage, sessionId, turnCount);
       
-      logger.log('INFO', 'Anthropic response received');
-      currentMessage = anthropicResult.response;
+      logger.log('INFO', `LLM2 (${llm2Provider}) response received`);
+      currentMessage = llm2Result.response;
       
       // Delay between exchanges
       await new Promise(resolve => setTimeout(resolve, delay));
@@ -229,7 +243,9 @@ async function main() {
       totalTokens,
       openaiTokens,
       anthropicTokens,
-      logDir
+      logDir,
+      llm1Provider,
+      llm2Provider
     );
     
     logger.log('INFO', `Comprehensive JSON export completed: ${jsonOutput}`);

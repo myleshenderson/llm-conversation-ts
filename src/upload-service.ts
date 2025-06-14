@@ -28,7 +28,11 @@ export class UploadService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      const url = new URL(this.config.UPLOAD_API_URL);
+      const uploadUrl = this.config.UPLOAD_API_URL;
+      if (!uploadUrl) {
+        return false;
+      }
+      const url = new URL(uploadUrl);
       
       return new Promise((resolve) => {
         const options = {
@@ -41,7 +45,7 @@ export class UploadService {
 
         const req = https.request(options, (res) => {
           // Any response (even 405 Method Not Allowed) means the endpoint is reachable
-          resolve(res.statusCode < 500);
+          resolve(res.statusCode !== undefined && res.statusCode < 500);
         });
 
         req.on('error', () => resolve(false));
@@ -130,7 +134,11 @@ export class UploadService {
   private async _performUpload(conversation: ComprehensiveConversation, filename?: string): Promise<UploadResult> {
     return new Promise((resolve, reject) => {
       try {
-        const url = new URL(this.config.UPLOAD_API_URL);
+        const uploadUrl = this.config.UPLOAD_API_URL;
+        if (!uploadUrl) {
+          throw new Error('Upload API URL not configured');
+        }
+        const url = new URL(uploadUrl);
         const data = JSON.stringify(conversation);
         
         const options = {

@@ -24,18 +24,41 @@ export function loadConfig(): Config {
   
   // Validate required fields
   const requiredFields = [
-    'OPENAI_API_KEY',
-    'ANTHROPIC_API_KEY',
-    'OPENAI_MODEL',
-    'ANTHROPIC_MODEL',
-    'OPENAI_BASE_URL',
-    'ANTHROPIC_BASE_URL'
+    'LLM1_PROVIDER',
+    'LLM2_PROVIDER',
+    'CONVERSATION_TOPIC',
+    'MAX_TURNS',
+    'DELAY_BETWEEN_MESSAGES'
   ];
   
   for (const field of requiredFields) {
     if (!(config as any)[field]) {
       console.error(`Error: Missing required config field: ${field}`);
       process.exit(1);
+    }
+  }
+  
+  // Validate provider-specific fields
+  const providers = [
+    (config as any)['LLM1_PROVIDER'],
+    (config as any)['LLM2_PROVIDER']
+  ];
+  
+  for (const provider of providers) {
+    if (!provider) continue;
+    
+    const providerUpper = provider.toUpperCase();
+    const providerRequiredFields = [
+      `${providerUpper}_API_KEY`,
+      `${providerUpper}_MODEL`,
+      `${providerUpper}_BASE_URL`
+    ];
+    
+    for (const field of providerRequiredFields) {
+      if (!(config as any)[field]) {
+        console.error(`Error: Missing required config field: ${field} for provider: ${provider}`);
+        process.exit(1);
+      }
     }
   }
 
