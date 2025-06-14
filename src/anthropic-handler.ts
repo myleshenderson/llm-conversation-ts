@@ -10,9 +10,11 @@ export class AnthropicHandler implements LLMHandler {
   private config: Config;
   private logger: Logger;
   private historyManager: HistoryManager;
+  private model: string;
   
-  constructor(config: Config, sessionId: string, turnNumber: number) {
+  constructor(config: Config, sessionId: string, turnNumber: number, model?: string) {
     this.config = config;
+    this.model = model || config.ANTHROPIC_MODEL;
     
     const logDir = path.join(process.cwd(), 'logs');
     const anthropicLog = path.join(logDir, `${sessionId}_anthropic.log`);
@@ -33,7 +35,7 @@ export class AnthropicHandler implements LLMHandler {
       
       // Prepare API request
       const payload = {
-        model: this.config.ANTHROPIC_MODEL,
+        model: this.model,
         max_tokens: 1000,
         system: `You are participating in a conversation with another AI about: ${this.config.CONVERSATION_TOPIC}. This is an ongoing discussion - respond naturally and build upon what has been said before. Keep your responses concise but meaningful.`,
         messages
@@ -46,7 +48,7 @@ export class AnthropicHandler implements LLMHandler {
       };
       
       this.logger.log('DEBUG', `Sending request to Anthropic API with ${messages.length} messages in history`);
-      this.logger.log('DEBUG', `Model: ${this.config.ANTHROPIC_MODEL}`);
+      this.logger.log('DEBUG', `Model: ${this.model}`);
       
       // Make API call with retry logic
       const startTime = Date.now();

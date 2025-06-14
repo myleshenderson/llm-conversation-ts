@@ -2,8 +2,23 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Config, LLMProvider } from './types';
 import { isModelSupported, getModelListForError } from './model-registry';
+import { isDynamicModelSupported, getDynamicModelListForError } from './dynamic-model-registry';
 
-export function loadConfig(): Config {
+/**
+ * Enhanced configuration loader that supports both static and dynamic model validation
+ */
+
+interface ConfigOptions {
+  useDynamicModels?: boolean;
+  validateModelsOnStartup?: boolean;
+}
+
+export async function loadEnhancedConfig(options: ConfigOptions = {}): Promise<Config> {
+  const { 
+    useDynamicModels = false, 
+    validateModelsOnStartup = true 
+  } = options;
+
   const configPath = path.join(__dirname, '..', 'config.env');
   
   if (!fs.existsSync(configPath)) {
@@ -18,8 +33,8 @@ export function loadConfig(): Config {
     const trimmedLine = line.trim();
     if (trimmedLine && !trimmedLine.startsWith('#') && trimmedLine.includes('=')) {
       const [key, ...valueParts] = trimmedLine.split('=');
-      const value = valueParts.join('=').replace(/^["']|["']$/g, '');
-      (config as any)[key] = value;
+      const value = valueParts.join('=').trim();
+      (config as any)[key.trim()] = value;
     }
   }
   
@@ -27,6 +42,12 @@ export function loadConfig(): Config {
   const requiredFields = [
     'LLM1_PROVIDER',
     'LLM2_PROVIDER',
+    'OPENAI_API_KEY',
+    'OPENAI_MODEL',
+    'OPENAI_BASE_URL',
+    'ANTHROPIC_API_KEY',
+    'ANTHROPIC_MODEL',
+    'ANTHROPIC_BASE_URL',
     'CONVERSATION_TOPIC',
     'MAX_TURNS',
     'DELAY_BETWEEN_MESSAGES'
@@ -84,32 +105,61 @@ export function loadConfig(): Config {
   const llm1Model = configData['LLM1_MODEL'];
   const llm2Model = configData['LLM2_MODEL'];
   
-  // Validate model configurations with comprehensive null safety
-  if (llm1Model && llm1Model.trim() !== '') {
-    // Extra defensive check to ensure typedLlm1Provider is valid
-    if (!typedLlm1Provider) {
-      console.error('Error: LLM1_PROVIDER is undefined during model validation');
-      process.exit(1);
+  if (validateModelsOnStartup) {
+    if (llm1Model && llm1Model.trim() !== '') {
+      const isValid = useDynamicModels 
+        ? await isDynamicModelSupported(
+            typedLlm1Provider, 
+            llm1Model,
+            configData[`${typedLlm1Provider.toUpperCase()}_API_KEY`],
+            configData[`${typedLlm1Provider.toUpperCase()}_BASE_URL`]
+          )
+        : isModelSupported(typedLlm1Provider, llm1Model);
+        
+      if (!isValid) {
+        const errorList = useDynamicModels
+          ? await getDynamicModelListForError(
+              typedLlm1Provider,
+              configData[`${typedLlm1Provider.toUpperCase()}_API_KEY`],
+              configData[`${typedLlm1Provider.toUpperCase()}_BASE_URL`]
+            )
+          : getModelListForError(typedLlm1Provider);
+          
+        console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${typedLlm1Provider}'.`);
+        console.error(`Supported models: ${errorList}`);
+        if (useDynamicModels) {
+          console.error('(Models fetched dynamically from API)');
+        }
+        process.exit(1);
+      }
     }
     
-    if (!isModelSupported(typedLlm1Provider, llm1Model)) {
-      console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${typedLlm1Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(typedLlm1Provider)}`);
-      process.exit(1);
-    }
-  }
-  
-  if (llm2Model && llm2Model.trim() !== '') {
-    // Extra defensive check to ensure typedLlm2Provider is valid
-    if (!typedLlm2Provider) {
-      console.error('Error: LLM2_PROVIDER is undefined during model validation');
-      process.exit(1);
-    }
-    
-    if (!isModelSupported(typedLlm2Provider, llm2Model)) {
-      console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${typedLlm2Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(typedLlm2Provider)}`);
-      process.exit(1);
+    if (llm2Model && llm2Model.trim() !== '') {
+      const isValid = useDynamicModels 
+        ? await isDynamicModelSupported(
+            typedLlm2Provider, 
+            llm2Model,
+            configData[`${typedLlm2Provider.toUpperCase()}_API_KEY`],
+            configData[`${typedLlm2Provider.toUpperCase()}_BASE_URL`]
+          )
+        : isModelSupported(typedLlm2Provider, llm2Model);
+        
+      if (!isValid) {
+        const errorList = useDynamicModels
+          ? await getDynamicModelListForError(
+              typedLlm2Provider,
+              configData[`${typedLlm2Provider.toUpperCase()}_API_KEY`],
+              configData[`${typedLlm2Provider.toUpperCase()}_BASE_URL`]
+            )
+          : getModelListForError(typedLlm2Provider);
+          
+        console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${typedLlm2Provider}'.`);
+        console.error(`Supported models: ${errorList}`);
+        if (useDynamicModels) {
+          console.error('(Models fetched dynamically from API)');
+        }
+        process.exit(1);
+      }
     }
   }
 
@@ -137,6 +187,11 @@ export function loadConfig(): Config {
     MAX_TURNS: configData['MAX_TURNS'] || '',
     DELAY_BETWEEN_MESSAGES: configData['DELAY_BETWEEN_MESSAGES'] || ''
   };
+  
+  // Log dynamic model status if enabled
+  if (useDynamicModels && validateModelsOnStartup) {
+    console.log('✅ Dynamic model validation enabled - models fetched from provider APIs');
+  }
   
   return typedConfig;
 }

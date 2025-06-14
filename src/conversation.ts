@@ -7,6 +7,7 @@ import { Logger } from './logger';
 import { createUploadService } from './upload-service';
 import { ComprehensiveConversation, TurnMetadata, LLMIdentifier, LLMProvider } from './types';
 import { LLMHandlerFactory } from './llm-handler-factory';
+import { ConversationAdapter } from './conversation-adapter';
 
 function generateSessionId(topic: string): string {
   const topicSlug = topic.toLowerCase().replace(/[^a-z0-9]/g, '_').substring(0, 30);
@@ -66,7 +67,9 @@ function createComprehensiveJson(
   anthropicTokens: number,
   logDir: string,
   llm1Provider: LLMProvider,
-  llm2Provider: LLMProvider
+  llm2Provider: LLMProvider,
+  llm1Model: string,
+  llm2Model: string
 ): string {
   // Calculate average response time
   const avgResponseTime = turns.length > 0 
@@ -89,14 +92,26 @@ function createComprehensiveJson(
       actual_turns: actualTurns
     },
     models: {
+      // Show the actual models used for each LLM, not just provider defaults
+      llm1: {
+        provider: llm1Provider,
+        model: llm1Model,
+        api_base: llm1Provider === 'openai' ? config.OPENAI_BASE_URL : config.ANTHROPIC_BASE_URL
+      },
+      llm2: {
+        provider: llm2Provider,
+        model: llm2Model,
+        api_base: llm2Provider === 'openai' ? config.OPENAI_BASE_URL : config.ANTHROPIC_BASE_URL
+      },
+      // Also include provider defaults for reference
       ...(llm1Provider === 'openai' || llm2Provider === 'openai' ? {
-        openai: {
+        openai_defaults: {
           model: config.OPENAI_MODEL,
           api_base: config.OPENAI_BASE_URL
         }
       } : {}),
       ...(llm1Provider === 'anthropic' || llm2Provider === 'anthropic' ? {
-        anthropic: {
+        anthropic_defaults: {
           model: config.ANTHROPIC_MODEL,
           api_base: config.ANTHROPIC_BASE_URL
         }
@@ -142,8 +157,8 @@ async function main() {
     process.exit(1);
   }
   
-  // Load configuration
-  const config = loadConfig();
+  // Load configuration with automatic dynamic model discovery
+  const config = await (await import('./auto-config')).loadAutoConfig();
   
   // Get providers for LLM1 and LLM2
   const llm1Provider = LLMHandlerFactory.getProviderForLLM('llm1', config);
@@ -159,9 +174,9 @@ async function main() {
   const sessionId = generateSessionId(topic);
   const sessionLog = path.join(logDir, `${sessionId}.log`);
   
-  // Get models for display
-  const llm1Model = llm1Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
-  const llm2Model = llm2Provider === 'openai' ? config.OPENAI_MODEL : config.ANTHROPIC_MODEL;
+  // Get models for display using ConversationAdapter
+  const llm1Model = ConversationAdapter.getModelForLLM('llm1', config);
+  const llm2Model = ConversationAdapter.getModelForLLM('llm2', config);
   
   // Initialize session log
   const sessionHeader = [
@@ -190,9 +205,9 @@ async function main() {
     while (turnCount < maxTurns) {
       // LLM1 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM1 (${llm1Provider}) (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM1 (${llm1Provider}:${llm1Model}) (with conversation history)`);
       
-      const llm1Handler = LLMHandlerFactory.createHandler(llm1Provider, config, sessionId, turnCount);
+      const llm1Handler = LLMHandlerFactory.createHandlerForLLM('llm1', config, sessionId, turnCount);
       const llm1Result = await llm1Handler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', `LLM1 (${llm1Provider}) response received`);
@@ -208,9 +223,9 @@ async function main() {
       
       // LLM2 turn
       turnCount++;
-      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM2 (${llm2Provider}) (with conversation history)`);
+      logger.log('INFO', `Turn ${turnCount}/${maxTurns}: LLM2 (${llm2Provider}:${llm2Model}) (with conversation history)`);
       
-      const llm2Handler = LLMHandlerFactory.createHandler(llm2Provider, config, sessionId, turnCount);
+      const llm2Handler = LLMHandlerFactory.createHandlerForLLM('llm2', config, sessionId, turnCount);
       const llm2Result = await llm2Handler.processMessage(currentMessage, sessionId, turnCount);
       
       logger.log('INFO', `LLM2 (${llm2Provider}) response received`);
@@ -245,7 +260,9 @@ async function main() {
       anthropicTokens,
       logDir,
       llm1Provider,
-      llm2Provider
+      llm2Provider,
+      llm1Model,
+      llm2Model
     );
     
     logger.log('INFO', `Comprehensive JSON export completed: ${jsonOutput}`);
