@@ -32,34 +32,39 @@ export function loadConfig(): Config {
     'DELAY_BETWEEN_MESSAGES'
   ];
   
+  // Use proper typing from the start
+  const configData = config as Record<string, string | undefined>;
+  
   for (const field of requiredFields) {
-    if (!(config as any)[field]) {
+    if (!configData[field]) {
       console.error(`Error: Missing required config field: ${field}`);
       process.exit(1);
     }
   }
   
-  // Validate provider values
-  const validProviders = ['openai', 'anthropic'];
-  const llm1Provider = (config as any)['LLM1_PROVIDER'];
-  const llm2Provider = (config as any)['LLM2_PROVIDER'];
+  // Validate provider values with proper typing
+  const validProviders: LLMProvider[] = ['openai', 'anthropic'];
+  const llm1Provider = configData['LLM1_PROVIDER'];
+  const llm2Provider = configData['LLM2_PROVIDER'];
   
-  if (!validProviders.includes(llm1Provider)) {
+  if (!llm1Provider || !validProviders.includes(llm1Provider as LLMProvider)) {
     console.error(`Error: Invalid LLM1_PROVIDER value: ${llm1Provider}. Must be one of: ${validProviders.join(', ')}`);
     process.exit(1);
   }
   
-  if (!validProviders.includes(llm2Provider)) {
+  if (!llm2Provider || !validProviders.includes(llm2Provider as LLMProvider)) {
     console.error(`Error: Invalid LLM2_PROVIDER value: ${llm2Provider}. Must be one of: ${validProviders.join(', ')}`);
     process.exit(1);
   }
   
+  // Now we can safely cast to LLMProvider since we've validated them
+  const typedLlm1Provider = llm1Provider as LLMProvider;
+  const typedLlm2Provider = llm2Provider as LLMProvider;
+  
   // Validate provider-specific fields
-  const providers = [llm1Provider, llm2Provider];
+  const providers = [typedLlm1Provider, typedLlm2Provider];
   
   for (const provider of providers) {
-    if (!provider) continue;
-    
     const providerUpper = provider.toUpperCase();
     const providerRequiredFields = [
       `${providerUpper}_API_KEY`,
@@ -68,40 +73,57 @@ export function loadConfig(): Config {
     ];
     
     for (const field of providerRequiredFields) {
-      if (!(config as any)[field]) {
+      if (!configData[field]) {
         console.error(`Error: Missing required config field: ${field} for provider: ${provider}`);
         process.exit(1);
       }
     }
   }
 
-  // Validate model configurations if specified
-  const llm1Model = (config as any)['LLM1_MODEL'];
-  const llm2Model = (config as any)['LLM2_MODEL'];
+  // Validate model configurations if specified with proper type safety
+  const llm1Model = configData['LLM1_MODEL'];
+  const llm2Model = configData['LLM2_MODEL'];
   
-  if (llm1Model && llm1Provider && (llm1Provider === 'openai' || llm1Provider === 'anthropic')) {
-    if (!isModelSupported(llm1Provider, llm1Model)) {
-      console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${llm1Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(llm1Provider)}`);
+  if (llm1Model && llm1Model.trim() !== '') {
+    if (!isModelSupported(typedLlm1Provider, llm1Model)) {
+      console.error(`Error: Invalid LLM1_MODEL '${llm1Model}' for provider '${typedLlm1Provider}'.`);
+      console.error(`Supported models: ${getModelListForError(typedLlm1Provider)}`);
       process.exit(1);
     }
   }
   
-  if (llm2Model && llm2Provider && (llm2Provider === 'openai' || llm2Provider === 'anthropic')) {
-    if (!isModelSupported(llm2Provider, llm2Model)) {
-      console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${llm2Provider}'.`);
-      console.error(`Supported models: ${getModelListForError(llm2Provider)}`);
+  if (llm2Model && llm2Model.trim() !== '') {
+    if (!isModelSupported(typedLlm2Provider, llm2Model)) {
+      console.error(`Error: Invalid LLM2_MODEL '${llm2Model}' for provider '${typedLlm2Provider}'.`);
+      console.error(`Supported models: ${getModelListForError(typedLlm2Provider)}`);
       process.exit(1);
     }
   }
 
   // Validate upload configuration if enabled
-  if ((config as any)['UPLOAD_ENABLED'] === 'true') {
-    if (!(config as any)['UPLOAD_API_URL']) {
+  if (configData['UPLOAD_ENABLED'] === 'true') {
+    if (!configData['UPLOAD_API_URL']) {
       console.error('Error: UPLOAD_API_URL is required when UPLOAD_ENABLED is true');
       process.exit(1);
     }
   }
   
-  return config as Config;
+  // Build the properly typed config object
+  const typedConfig: Config = {
+    LLM1_PROVIDER: typedLlm1Provider,
+    LLM2_PROVIDER: typedLlm2Provider,
+    LLM1_MODEL: llm1Model || undefined,
+    LLM2_MODEL: llm2Model || undefined,
+    OPENAI_API_KEY: configData['OPENAI_API_KEY'] || '',
+    OPENAI_MODEL: configData['OPENAI_MODEL'] || '',
+    OPENAI_BASE_URL: configData['OPENAI_BASE_URL'] || '',
+    ANTHROPIC_API_KEY: configData['ANTHROPIC_API_KEY'] || '',
+    ANTHROPIC_MODEL: configData['ANTHROPIC_MODEL'] || '',
+    ANTHROPIC_BASE_URL: configData['ANTHROPIC_BASE_URL'] || '',
+    CONVERSATION_TOPIC: configData['CONVERSATION_TOPIC'] || '',
+    MAX_TURNS: configData['MAX_TURNS'] || '',
+    DELAY_BETWEEN_MESSAGES: configData['DELAY_BETWEEN_MESSAGES'] || ''
+  };
+  
+  return typedConfig;
 }
