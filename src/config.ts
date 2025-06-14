@@ -38,11 +38,23 @@ export function loadConfig(): Config {
     }
   }
   
+  // Validate provider values
+  const validProviders = ['openai', 'anthropic'];
+  const llm1Provider = (config as any)['LLM1_PROVIDER'];
+  const llm2Provider = (config as any)['LLM2_PROVIDER'];
+  
+  if (!validProviders.includes(llm1Provider)) {
+    console.error(`Error: Invalid LLM1_PROVIDER value: ${llm1Provider}. Must be one of: ${validProviders.join(', ')}`);
+    process.exit(1);
+  }
+  
+  if (!validProviders.includes(llm2Provider)) {
+    console.error(`Error: Invalid LLM2_PROVIDER value: ${llm2Provider}. Must be one of: ${validProviders.join(', ')}`);
+    process.exit(1);
+  }
+  
   // Validate provider-specific fields
-  const providers = [
-    (config as any)['LLM1_PROVIDER'],
-    (config as any)['LLM2_PROVIDER']
-  ];
+  const providers = [llm1Provider, llm2Provider];
   
   for (const provider of providers) {
     if (!provider) continue;

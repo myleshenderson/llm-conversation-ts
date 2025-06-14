@@ -10,8 +10,7 @@ export class ConversationAdapter {
    * Maps an internal LLM identifier to its configured provider
    */
   static getProviderForLLM(llmId: LLMIdentifier, config: Config): LLMProvider {
-    const providerKey = llmId === 'llm1' ? 'LLM1_PROVIDER' : 'LLM2_PROVIDER';
-    const provider = (config as any)[providerKey] as LLMProvider;
+    const provider = llmId === 'llm1' ? config.LLM1_PROVIDER : config.LLM2_PROVIDER;
     
     if (!provider) {
       throw new Error(`Provider not configured for ${llmId}`);
@@ -31,8 +30,13 @@ export class ConversationAdapter {
       return this.getProviderForLLM('llm2', config);
     }
     
-    // If it's already a provider name or 'user', return as-is
-    return speaker as LLMProvider;
+    // Validate that it's a valid provider name
+    const validProviders: LLMProvider[] = ['openai', 'anthropic'];
+    if (validProviders.includes(speaker as LLMProvider)) {
+      return speaker as LLMProvider;
+    }
+    
+    throw new Error(`Invalid speaker: ${speaker}. Expected 'llm1', 'llm2', or a valid provider name.`);
   }
   
   /**

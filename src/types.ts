@@ -1,7 +1,10 @@
+export type LLMProvider = 'openai' | 'anthropic';
+export type LLMIdentifier = 'llm1' | 'llm2';
+
 export interface Config {
   // LLM Provider Configuration
-  LLM1_PROVIDER: string;
-  LLM2_PROVIDER: string;
+  LLM1_PROVIDER: LLMProvider;
+  LLM2_PROVIDER: LLMProvider;
   
   // OpenAI Configuration
   OPENAI_API_KEY: string;
@@ -26,9 +29,6 @@ export interface Config {
   UPLOAD_MAX_RETRIES?: string;
   UPLOAD_RETRY_DELAY?: string;
 }
-
-export type LLMProvider = 'openai' | 'anthropic';
-export type LLMIdentifier = 'llm1' | 'llm2';
 
 export interface ConversationMessage {
   role?: 'user' | 'assistant' | 'system';

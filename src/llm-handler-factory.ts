@@ -2,6 +2,7 @@ import { Config, LLMProvider, LLMIdentifier } from './types';
 import { LLMHandler } from './llm-handler-interface';
 import { OpenAIHandler } from './openai-handler';
 import { AnthropicHandler } from './anthropic-handler';
+import { ConversationAdapter } from './conversation-adapter';
 
 export class LLMHandlerFactory {
   static createHandler(
@@ -21,13 +22,6 @@ export class LLMHandlerFactory {
   }
   
   static getProviderForLLM(llmId: LLMIdentifier, config: Config): LLMProvider {
-    const providerKey = llmId === 'llm1' ? 'LLM1_PROVIDER' : 'LLM2_PROVIDER';
-    const provider = (config as any)[providerKey] as LLMProvider;
-    
-    if (!provider) {
-      throw new Error(`Provider not configured for ${llmId}`);
-    }
-    
-    return provider;
+    return ConversationAdapter.getProviderForLLM(llmId, config);
   }
 }
