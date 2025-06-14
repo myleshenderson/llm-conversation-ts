@@ -33,7 +33,7 @@ export async function loadEnhancedConfig(options: ConfigOptions = {}): Promise<C
     const trimmedLine = line.trim();
     if (trimmedLine && !trimmedLine.startsWith('#') && trimmedLine.includes('=')) {
       const [key, ...valueParts] = trimmedLine.split('=');
-      const value = valueParts.join('=').trim();
+      const value = valueParts.join('=').replace(/^["']|["']$/g, '');
       (config as any)[key.trim()] = value;
     }
   }

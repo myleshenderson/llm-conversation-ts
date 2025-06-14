@@ -15,7 +15,7 @@ function generateSessionId(topic: string): string {
   return `conversation_${timestamp}_${topicSlug}`;
 }
 
-function collectTurnData(logDir: string, sessionId: string): {
+function collectTurnData(logDir: string, sessionId: string, llm1Provider: LLMProvider, llm2Provider: LLMProvider): {
   turns: TurnMetadata[];
   totalTokens: number;
   openaiTokens: number;
@@ -38,11 +38,19 @@ function collectTurnData(logDir: string, sessionId: string): {
       const tokens = turnData.tokens?.total || 0;
       totalTokens += tokens;
       
-      // Still track by provider for statistics
-      if (turnData.speaker === 'openai') {
-        openaiTokens += tokens;
-      } else if (turnData.speaker === 'anthropic') {
-        anthropicTokens += tokens;
+      // Track by provider for statistics using speaker position mapping
+      if (turnData.speaker === 'speaker_1') {
+        if (llm1Provider === 'openai') {
+          openaiTokens += tokens;
+        } else if (llm1Provider === 'anthropic') {
+          anthropicTokens += tokens;
+        }
+      } else if (turnData.speaker === 'speaker_2') {
+        if (llm2Provider === 'openai') {
+          openaiTokens += tokens;
+        } else if (llm2Provider === 'anthropic') {
+          anthropicTokens += tokens;
+        }
       }
     } catch (error) {
       console.error(`Error reading ${turnFile}:`, error);
@@ -84,7 +92,12 @@ function createComprehensiveJson(
       duration_seconds: duration,
       status: 'completed',
       version: '2.0',
-      features: ['conversation_history', 'context_aware', 'typescript_native']
+      features: ['conversation_history', 'context_aware', 'typescript_native'],
+      // LLM configuration for visualizer integration
+      llm1_provider: llm1Provider,
+      llm1_model: llm1Model,
+      llm2_provider: llm2Provider,
+      llm2_model: llm2Model
     },
     conversation: {
       topic,
@@ -243,7 +256,7 @@ async function main() {
     logger.log('INFO', 'Building comprehensive JSON export...');
     
     // Collect turn data and create comprehensive JSON
-    const { turns, totalTokens, openaiTokens, anthropicTokens } = collectTurnData(logDir, sessionId);
+    const { turns, totalTokens, openaiTokens, anthropicTokens } = collectTurnData(logDir, sessionId, llm1Provider, llm2Provider);
     
     const jsonOutput = createComprehensiveJson(
       sessionId,

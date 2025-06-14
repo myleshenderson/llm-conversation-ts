@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config, OpenAIResponse, TurnMetadata, AIHandlerResult } from './types';
+import { Config, OpenAIResponse, TurnMetadata, AIHandlerResult, SpeakerPosition } from './types';
 import { Logger } from './logger';
 import { HistoryManager } from './history';
 import { withRetry, DEFAULT_RETRY_OPTIONS } from './retry-utils';
@@ -11,10 +11,12 @@ export class OpenAIHandler implements LLMHandler {
   private logger: Logger;
   private historyManager: HistoryManager;
   private model: string;
+  private speakerPosition: SpeakerPosition;
   
-  constructor(config: Config, sessionId: string, turnNumber: number, model?: string) {
+  constructor(config: Config, sessionId: string, turnNumber: number, speakerPosition: SpeakerPosition, model?: string) {
     this.config = config;
     this.model = model || config.OPENAI_MODEL;
+    this.speakerPosition = speakerPosition;
     
     const logDir = path.join(process.cwd(), 'logs');
     const openaiLog = path.join(logDir, `${sessionId}_openai.log`);
@@ -99,7 +101,7 @@ export class OpenAIHandler implements LLMHandler {
       // Create metadata
       const metadata: TurnMetadata = {
         turn: turnNumber,
-        speaker: 'openai',
+        speaker: this.speakerPosition,
         model: modelUsed,
         timestamp: new Date().toISOString(),
         input: message,

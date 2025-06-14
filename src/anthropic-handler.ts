@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config, AnthropicResponse, TurnMetadata, AIHandlerResult } from './types';
+import { Config, AnthropicResponse, TurnMetadata, AIHandlerResult, SpeakerPosition } from './types';
 import { Logger } from './logger';
 import { HistoryManager } from './history';
 import { withRetry, DEFAULT_RETRY_OPTIONS } from './retry-utils';
@@ -11,10 +11,12 @@ export class AnthropicHandler implements LLMHandler {
   private logger: Logger;
   private historyManager: HistoryManager;
   private model: string;
+  private speakerPosition: SpeakerPosition;
   
-  constructor(config: Config, sessionId: string, turnNumber: number, model?: string) {
+  constructor(config: Config, sessionId: string, turnNumber: number, speakerPosition: SpeakerPosition, model?: string) {
     this.config = config;
     this.model = model || config.ANTHROPIC_MODEL;
+    this.speakerPosition = speakerPosition;
     
     const logDir = path.join(process.cwd(), 'logs');
     const anthropicLog = path.join(logDir, `${sessionId}_anthropic.log`);
@@ -100,7 +102,7 @@ export class AnthropicHandler implements LLMHandler {
       // Create metadata
       const metadata: TurnMetadata = {
         turn: turnNumber,
-        speaker: 'anthropic',
+        speaker: this.speakerPosition,
         model: modelUsed,
         timestamp: new Date().toISOString(),
         input: message,
